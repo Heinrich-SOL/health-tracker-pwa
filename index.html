@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>건강 관리 기록</title>
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="theme-color" content="#ffffff">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    *, *::before, *::after {
+      box-sizing: border-box;
+    }
+    body {
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      overflow-x: hidden !important;
+      width: 100%;
+    }
+    input[type="number"]::-webkit-inner-spin-button,
+    input[type="number"]::-webkit-outer-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+    input[type="number"] {
+      -moz-appearance: textfield;
+    }
+    .safe-top { padding-top: env(safe-area-inset-top, 20px); }
+    .safe-bottom { padding-bottom: env(safe-area-inset-bottom, 20px); }
+  </style>
+</head>
+<body class="bg-slate-100 text-slate-800 antialiased min-h-screen flex flex-col justify-between overflow-x-hidden">
+
+  <!-- Main Container -->
+  <main class="w-full max-w-sm mx-auto flex-1 flex flex-col px-3.5 safe-top pb-24 overflow-x-hidden">
+    
+    <!-- Header -->
+    <header class="flex items-center justify-between mb-3 px-1">
+      <div class="flex items-center space-x-2">
+        <div class="w-8 h-8 rounded-xl bg-blue-600 flex items-center justify-center text-white shadow-sm shadow-blue-500/30 shrink-0">
+          <i class="fa-solid fa-heart-pulse text-sm"></i>
+        </div>
+        <h1 class="text-base font-bold tracking-tight text-slate-900" id="page-title">건강 관리 기록</h1>
+      </div>
+      <span class="text-[11px] font-semibold px-2 py-1 bg-blue-50 text-blue-700 rounded-full shrink-0" id="header-date">--월 --일</span>
+    </header>
+
+    <!-- TAB 1: Record Input -->
+    <section id="tab-record" class="space-y-3">
+      <!-- Timing & Date Card (세로 1열 배치) -->
+      <div class="bg-white p-3.5 rounded-2xl border border-slate-200 shadow-sm space-y-2.5">
+        <div class="flex items-center justify-between">
+          <span class="text-[11px] font-bold text-slate-500 flex items-center gap-1.5">
+            <i class="fa-regular fa-clock text-blue-500"></i> 시간대 선택
+          </span>
+          <span class="text-[10px] font-medium text-blue-600" id="timing-auto-badge">자동 선택됨</span>
+        </div>
+
+        <!-- 4개 시간대 버튼 -->
+        <div class="grid grid-cols-4 gap-1.5">
+          <button type="button" class="timing-btn flex flex-col items-center justify-center py-2 rounded-xl border border-slate-200 text-slate-600 transition-all" data-timing="아침">
+            <i class="fa-solid fa-sun text-amber-500 text-xs mb-0.5"></i>
+            <span class="text-[11px] font-bold">아침</span>
+          </button>
+          <button type="button" class="timing-btn flex flex-col items-center justify-center py-2 rounded-xl border border-slate-200 text-slate-600 transition-all" data-timing="점심">
+            <i class="fa-solid fa-cloud-sun text-orange-400 text-xs mb-0.5"></i>
+            <span class="text-[11px] font-bold">점심</span>
+          </button>
+          <button type="button" class="timing-btn flex flex-col items-center justify-center py-2 rounded-xl border border-slate-200 text-slate-600 transition-all" data-timing="저녁">
+            <i class="fa-solid fa-utensils text-rose-500 text-xs mb-0.5"></i>
+            <span class="text-[11px] font-bold">저녁</span>
+          </button>
+          <button type="button" class="timing-btn flex flex-col items-center justify-center py-2 rounded-xl border border-slate-200 text-slate-600 transition-all" data-timing="취침전">
+            <i class="fa-solid fa-moon text-indigo-500 text-xs mb-0.5"></i>
+            <span class="text-[11px] font-bold">취침전</span>
+          </button>
+        </div>
+
+        <!-- 날짜 및 시간: 상하 1줄씩 분리 (밀림 0%) -->
+        <div class="space-y-1.5 pt-1">
+          <div class="relative flex items-center justify-between px-3 py-2 bg-slate-50 rounded-xl border border-slate-200">
+            <span class="text-xs font-semibold text-slate-500 flex items-center gap-1.5">
+              <i class="fa-regular fa-calendar text-slate-400"></i> 측정일
+            </span>
+            <span id="date-display" class="text-xs font-bold text-slate-800">2026. 10. 28.</span>
+            <input type="date" id="input-date" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer">
+          </div>
+          <div class="relative flex items-center justify-between px-3 py-2 bg-slate-50 rounded-xl border border-slate-200">
+            <span class="text-xs font-semibold text-slate-500 flex items-center gap-1.5">
+              <i class="fa-regular fa-clock text-slate-400"></i> 시간
+            </span>
+            <span id="time-display" class="text-xs font-bold text-slate-800">오전 08:00</span>
+            <input type="time" id="input-time" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer">
+          </div>
+        </div>
+      </div>
+
+      <!-- Blood Pressure Card: 중앙 정렬 & 단위 간격 밀착 -->
+      <div class="bg-white p-3.5 rounded-2xl border border-slate-200 shadow-sm space-y-2.5">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-1.5 text-xs font-bold text-slate-700">
+            <span class="w-2 h-2 rounded-full bg-rose-500"></span> 혈압 및 맥박
+          </div>
+          <span class="text-[10px] text-slate-400">정상: 120 / 80 mmHg</span>
+        </div>
+        
+        <div class="grid grid-cols-3 gap-2">
+          <!-- 수축기 -->
+          <div class="bg-slate-50 py-2.5 px-1 rounded-xl border border-slate-200 flex flex-col items-center justify-center text-center">
+            <span class="text-[10px] text-slate-400 font-semibold mb-1">수축기 (최고)</span>
+            <div class="flex items-baseline justify-center gap-0.5 w-full">
+              <input type="number" id="bp-sys" placeholder="120" inputmode="numeric" class="w-12 text-center text-base font-bold text-slate-900 bg-transparent focus:outline-none p-0">
+              <span class="text-[9px] text-slate-400 font-medium">mmHg</span>
+            </div>
+          </div>
+          <!-- 이완기 -->
+          <div class="bg-slate-50 py-2.5 px-1 rounded-xl border border-slate-200 flex flex-col items-center justify-center text-center">
+            <span class="text-[10px] text-slate-400 font-semibold mb-1">이완기 (최저)</span>
+            <div class="flex items-baseline justify-center gap-0.5 w-full">
+              <input type="number" id="bp-dia" placeholder="80" inputmode="numeric" class="w-12 text-center text-base font-bold text-slate-900 bg-transparent focus:outline-none p-0">
+              <span class="text-[9px] text-slate-400 font-medium">mmHg</span>
+            </div>
+          </div>
+          <!-- 맥박수 -->
+          <div class="bg-slate-50 py-2.5 px-1 rounded-xl border border-slate-200 flex flex-col items-center justify-center text-center">
+            <span class="text-[10px] text-slate-400 font-semibold mb-1">맥박수</span>
+            <div class="flex items-baseline justify-center gap-0.5 w-full">
+              <input type="number" id="pulse" placeholder="72" inputmode="numeric" class="w-12 text-center text-base font-bold text-slate-900 bg-transparent focus:outline-none p-0">
+              <span class="text-[9px] text-slate-400 font-medium">bpm</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Blood Glucose Card -->
+      <div class="bg-white p-3.5 rounded-2xl border border-slate-200 shadow-sm space-y-2.5">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-1.5 text-xs font-bold text-slate-700">
+            <span class="w-2 h-2 rounded-full bg-emerald-500"></span> 혈당
+          </div>
+          <div class="flex bg-slate-100 p-0.5 rounded-lg border border-slate-200">
+            <button type="button" class="sugar-type-btn px-2 py-0.5 text-[10px] font-bold rounded transition-all" data-type="식전">식전</button>
+            <button type="button" class="sugar-type-btn px-2 py-0.5 text-[10px] font-bold rounded transition-all" data-type="식후 2시간">식후 2시간</button>
+          </div>
+        </div>
+        <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-200 flex items-center justify-between px-3">
+          <span class="text-xs font-semibold text-slate-500">혈당 수치</span>
+          <div class="flex items-baseline gap-1">
+            <input type="number" id="blood-sugar" placeholder="100" inputmode="numeric" class="w-16 text-right text-base font-bold text-slate-900 bg-transparent focus:outline-none p-0">
+            <span class="text-xs text-slate-400 font-medium">mg/dL</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Weight Card -->
+      <div class="bg-white p-3.5 rounded-2xl border border-slate-200 shadow-sm space-y-2.5">
+        <div class="flex items-center gap-1.5 text-xs font-bold text-slate-700">
+          <span class="w-2 h-2 rounded-full bg-indigo-500"></span> 몸무게
+        </div>
+        <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-200 flex items-center justify-between px-3">
+          <span class="text-xs font-semibold text-slate-500">현재 체중</span>
+          <div class="flex items-baseline gap-1">
+            <input type="number" id="weight" step="0.1" placeholder="70.0" inputmode="decimal" class="w-16 text-right text-base font-bold text-slate-900 bg-transparent focus:outline-none p-0">
+            <span class="text-xs text-slate-400 font-medium">kg</span>
+          </div>
+        </div>
+      </div>
+
+      <button id="save-btn" class="w-full py-3.5 bg-blue-600 hover:bg-blue-700 active:scale-[0.98] text-white font-bold rounded-xl shadow-md shadow-blue-500/20 transition-all text-xs">
+        기록 저장하기
+      </button>
+    </section>
+
+    <!-- TAB 2: Charts -->
+    <section id="tab-charts" class="space-y-3 hidden">
+      <div class="bg-white p-3 rounded-2xl border border-slate-200 shadow-sm">
+        <h2 class="text-xs font-bold text-slate-600 mb-2 flex items-center gap-1.5">
+          <i class="fa-solid fa-chart-line text-rose-500"></i> 혈압 변화 추이
+        </h2>
+        <div class="h-44">
+          <canvas id="bpChart"></canvas>
+        </div>
+      </div>
+      <div class="bg-white p-3 rounded-2xl border border-slate-200 shadow-sm">
+        <h2 class="text-xs font-bold text-slate-600 mb-2 flex items-center gap-1.5">
+          <i class="fa-solid fa-chart-simple text-emerald-500"></i> 혈당 변화 추이
+        </h2>
+        <div class="h-44">
+          <canvas id="sugarChart"></canvas>
+        </div>
+      </div>
+      <div class="bg-white p-3 rounded-2xl border border-slate-200 shadow-sm">
+        <h2 class="text-xs font-bold text-slate-600 mb-2 flex items-center gap-1.5">
+          <i class="fa-solid fa-weight-scale text-indigo-500"></i> 체중 변화 추이
+        </h2>
+        <div class="h-44">
+          <canvas id="weightChart"></canvas>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 3: History -->
+    <section id="tab-history" class="space-y-2 hidden">
+      <div class="flex justify-between items-center px-1">
+        <span class="text-xs font-bold text-slate-500">최근 기록 내역</span>
+        <span class="text-xs text-slate-400" id="record-count">0건</span>
+      </div>
+      <div id="history-list" class="space-y-2"></div>
+    </section>
+
+    <!-- TAB 4: Settings -->
+    <section id="tab-settings" class="space-y-3 hidden">
+      <div class="bg-white p-3 rounded-2xl border border-slate-200 shadow-sm space-y-2">
+        <h2 class="text-xs font-bold text-slate-600">데이터 백업 및 복원</h2>
+        <p class="text-[11px] text-slate-400 leading-relaxed">데이터는 기기 내부에만 안전하게 저장됩니다. 주기적으로 백업 파일을 보관해 두세요.</p>
+        <div class="grid grid-cols-2 gap-2 pt-1">
+          <button id="backup-btn" class="py-2.5 px-2 bg-slate-100 active:bg-slate-200 rounded-xl text-xs font-bold text-slate-700">
+            <i class="fa-solid fa-download mr-1"></i> JSON 백업
+          </button>
+          <label class="py-2.5 px-2 bg-slate-100 active:bg-slate-200 rounded-xl text-xs font-bold text-slate-700 text-center cursor-pointer">
+            <i class="fa-solid fa-upload mr-1"></i> 복원하기
+            <input type="file" id="restore-file" accept=".json" class="hidden">
+          </label>
+        </div>
+      </div>
+      <div class="bg-white p-3 rounded-2xl border border-slate-200 shadow-sm">
+        <button id="clear-all-btn" class="w-full py-2.5 text-xs font-bold text-rose-500 hover:bg-rose-50 rounded-xl transition-colors">
+          전체 기록 초기화
+        </button>
+      </div>
+    </section>
+  </main>
+
+  <!-- Bottom Navigation -->
+  <nav class="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-md border-t border-slate-200 safe-bottom z-50">
+    <div class="max-w-sm mx-auto grid grid-cols-4 py-1 px-1">
+      <button class="nav-btn flex flex-col items-center gap-0.5 py-1 text-blue-600" data-tab="tab-record">
+        <i class="fa-solid fa-pen-to-square text-base"></i>
+        <span class="text-[10px] font-bold">기록</span>
+      </button>
+      <button class="nav-btn flex flex-col items-center gap-0.5 py-1 text-slate-400" data-tab="tab-charts">
+        <i class="fa-solid fa-chart-line text-base"></i>
+        <span class="text-[10px] font-bold">그래프</span>
+      </button>
+      <button class="nav-btn flex flex-col items-center gap-0.5 py-1 text-slate-400" data-tab="tab-history">
+        <i class="fa-solid fa-list-ul text-base"></i>
+        <span class="text-[10px] font-bold">내역</span>
+      </button>
+      <button class="nav-btn flex flex-col items-center gap-0.5 py-1 text-slate-400" data-tab="tab-settings">
+        <i class="fa-solid fa-gear text-base"></i>
+        <span class="text-[10px] font-bold">설정</span>
+      </button>
+    </div>
+  </nav>
+
+  <script>
+    let records = JSON.parse(localStorage.getItem('health_records') || '[]');
+    let currentTiming = '아침';
+    let currentSugarType = '식전';
+    let charts = {};
+
+    function getNowTiming() {
+      const h = new Date().getHours();
+      if (h >= 5 && h < 11) return '아침';
+      if (h >= 11 && h < 16) return '점심';
+      if (h >= 16 && h < 21) return '저녁';
+      return '취침전';
+    }
+
+    function updateDateTimeDisplays(dVal, tVal) {
+      if (dVal) {
+        const parts = dVal.split('-');
+        document.getElementById('date-display').innerText = `${parts[0]}. ${parts[1]}. ${parts[2]}.`;
+      }
+      if (tVal) {
+        const [h, m] = tVal.split(':');
+        const numH = parseInt(h, 10);
+        const ampm = numH >= 12 ? '오후' : '오전';
+        const displayH = numH % 12 || 12;
+        document.getElementById('time-display').innerText = `${ampm} ${String(displayH).padStart(2, '0')}:${m}`;
+      }
+    }
+
+    function initHeaderDate() {
+      const now = new Date();
+      const days = ['일', '월', '화', '수', '목', '금', '토'];
+      document.getElementById('header-date').innerText = `${now.getMonth()+1}월 ${now.getDate()}일 (${days[now.getDay()]})`;
+      
+      const pad = n => String(n).padStart(2, '0');
+      const dStr = `${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())}`;
+      const tStr = `${pad(now.getHours())}:${pad(now.getMinutes())}`;
+      
+      const dateInp = document.getElementById('input-date');
+      const timeInp = document.getElementById('input-time');
+      dateInp.value = dStr;
+      timeInp.value = tStr;
+      updateDateTimeDisplays(dStr, tStr);
+
+      dateInp.addEventListener('change', (e) => updateDateTimeDisplays(e.target.value, null));
+      timeInp.addEventListener('change', (e) => updateDateTimeDisplays(null, e.target.value));
+    }
+
+    function setTiming(timing) {
+      currentTiming = timing;
+      document.querySelectorAll('.timing-btn').forEach(btn => {
+        const isMatch = btn.dataset.timing === timing;
+        btn.className = isMatch 
+          ? 'timing-btn flex flex-col items-center justify-center py-2 rounded-xl border-2 border-blue-600 bg-blue-50/50 text-blue-700 transition-all shadow-sm'
+          : 'timing-btn flex flex-col items-center justify-center py-2 rounded-xl border border-slate-200 text-slate-600 transition-all';
+      });
+    }
+
+    function setSugarType(type) {
+      currentSugarType = type;
+      document.querySelectorAll('.sugar-type-btn').forEach(btn => {
+        const isMatch = btn.dataset.type === type;
+        btn.className = isMatch
+          ? 'sugar-type-btn px-2 py-0.5 text-[10px] font-bold rounded bg-white text-emerald-600 shadow-sm transition-all'
+          : 'sugar-type-btn px-2 py-0.5 text-[10px] font-bold rounded text-slate-400 transition-all';
+      });
+    }
+
+    document.getElementById('save-btn').addEventListener('click', () => {
+      const date = document.getElementById('input-date').value;
+      const time = document.getElementById('input-time').value;
+      const bpSys = document.getElementById('bp-sys').value;
+      const bpDia = document.getElementById('bp-dia').value;
+      const pulse = document.getElementById('pulse').value;
+      const sugar = document.getElementById('blood-sugar').value;
+      const weight = document.getElementById('weight').value;
+
+      if (!bpSys && !bpDia && !sugar && !weight) {
+        alert('최소 한 개 이상의 건강 수치를 입력해 주세요.');
+        return;
+      }
+
+      const item = {
+        id: Date.now(),
+        date, time,
+        timing: currentTiming,
+        bpSys: bpSys ? Number(bpSys) : null,
+        bpDia: bpDia ? Number(bpDia) : null,
+        pulse: pulse ? Number(pulse) : null,
+        sugar: sugar ? Number(sugar) : null,
+        sugarType: sugar ? currentSugarType : null,
+        weight: weight ? Number(weight) : null
+      };
+
+      records.unshift(item);
+      localStorage.setItem('health_records', JSON.stringify(records));
+
+      document.getElementById('bp-sys').value = '';
+      document.getElementById('bp-dia').value = '';
+      document.getElementById('pulse').value = '';
+      document.getElementById('blood-sugar').value = '';
+      document.getElementById('weight').value = '';
+
+      alert('성공적으로 기록되었습니다.');
+      renderHistory();
+    });
+
+    document.querySelectorAll('.nav-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const tab = btn.dataset.tab;
+        document.querySelectorAll('main > section').forEach(sec => sec.classList.add('hidden'));
+        document.getElementById(tab).classList.remove('hidden');
+
+        document.querySelectorAll('.nav-btn').forEach(b => {
+          b.classList.remove('text-blue-600');
+          b.classList.add('text-slate-400');
+        });
+        btn.classList.add('text-blue-600');
+        btn.classList.remove('text-slate-400');
+
+        const titles = { 'tab-record': '건강 관리 기록', 'tab-charts': '변화 추이 통계', 'tab-history': '전체 기록 내역', 'tab-settings': '앱 설정 및 백업' };
+        document.getElementById('page-title').innerText = titles[tab];
+
+        if (tab === 'tab-charts') renderCharts();
+        if (tab === 'tab-history') renderHistory();
+      });
+    });
+
+    function renderHistory() {
+      const container = document.getElementById('history-list');
+      document.getElementById('record-count').innerText = `${records.length}건`;
+      if (records.length === 0) {
+        container.innerHTML = `<div class="p-6 text-center text-xs text-slate-400 bg-white rounded-2xl border border-slate-200">기록된 데이터가 없습니다.</div>`;
+        return;
+      }
+
+      container.innerHTML = records.map(r => `
+        <div class="bg-white p-3 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
+          <div>
+            <div class="flex items-center gap-1.5 mb-1">
+              <span class="text-xs font-bold text-slate-800">${r.date} ${r.time}</span>
+              <span class="text-[10px] px-1.5 py-0.5 rounded bg-blue-50 text-blue-700 font-semibold">${r.timing}</span>
+            </div>
+            <div class="text-[11px] text-slate-600 flex flex-wrap gap-x-2">
+              ${r.bpSys ? `<span>혈압: <b class="text-slate-800">${r.bpSys}/${r.bpDia}</b></span>` : ''}
+              ${r.sugar ? `<span>혈당(${r.sugarType}): <b class="text-slate-800">${r.sugar}</b></span>` : ''}
+              ${r.weight ? `<span>체중: <b class="text-slate-800">${r.weight}kg</b></span>` : ''}
+            </div>
+          </div>
+          <button onclick="deleteRecord(${r.id})" class="text-slate-300 hover:text-rose-500 p-1.5"><i class="fa-solid fa-trash-can text-xs"></i></button>
+        </div>
+      `).join('');
+    }
+
+    window.deleteRecord = function(id) {
+      if (!confirm('이 기록을 삭제하시겠습니까?')) return;
+      records = records.filter(r => r.id !== id);
+      localStorage.setItem('health_records', JSON.stringify(records));
+      renderHistory();
+    };
+
+    function renderCharts() {
+      const sorted = [...records].reverse();
+      const labels = sorted.map(r => `${r.date.slice(5)} ${r.timing}`);
+
+      if (charts.bp) charts.bp.destroy();
+      charts.bp = new Chart(document.getElementById('bpChart'), {
+        type: 'line',
+        data: {
+          labels,
+          datasets: [
+            { label: '수축기', data: sorted.map(r => r.bpSys), borderColor: '#f43f5e', tension: 0.3, pointRadius: 2.5 },
+            { label: '이완기', data: sorted.map(r => r.bpDia), borderColor: '#3b82f6', tension: 0.3, pointRadius: 2.5 }
+          ]
+        },
+        options: { responsive: true, maintainAspectRatio: false }
+      });
+
+      if (charts.sugar) charts.sugar.destroy();
+      charts.sugar = new Chart(document.getElementById('sugarChart'), {
+        type: 'line',
+        data: {
+          labels,
+          datasets: [{ label: '혈당', data: sorted.map(r => r.sugar), borderColor: '#10b981', tension: 0.3, pointRadius: 2.5 }]
+        },
+        options: { responsive: true, maintainAspectRatio: false }
+      });
+
+      if (charts.weight) charts.weight.destroy();
+      charts.weight = new Chart(document.getElementById('weightChart'), {
+        type: 'line',
+        data: {
+          labels,
+          datasets: [{ label: '체중(kg)', data: sorted.map(r => r.weight), borderColor: '#6366f1', tension: 0.3, pointRadius: 2.5 }]
+        },
+        options: { responsive: true, maintainAspectRatio: false }
+      });
+    }
+
+    document.getElementById('backup-btn').addEventListener('click', () => {
+      const blob = new Blob([JSON.stringify(records, null, 2)], { type: 'application/json' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `health_backup_${new Date().toISOString().slice(0,10)}.json`;
+      a.click();
+    });
+
+    document.getElementById('restore-file').addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        try {
+          const parsed = JSON.parse(event.target.result);
+          if (Array.isArray(parsed)) {
+            records = parsed;
+            localStorage.setItem('health_records', JSON.stringify(records));
+            alert('데이터가 성공적으로 복원되었습니다.');
+            renderHistory();
+          }
+        } catch { alert('올바르지 않은 백업 파일입니다.'); }
+      };
+      reader.readAsText(file);
+    });
+
+    document.getElementById('clear-all-btn').addEventListener('click', () => {
+      if (confirm('모든 기록을 삭제하시겠습니까? 복구할 수 없습니다.')) {
+        records = [];
+        localStorage.removeItem('health_records');
+        renderHistory();
+        alert('초기화되었습니다.');
+      }
+    });
+
+    initHeaderDate();
+    setTiming(getNowTiming());
+    setSugarType('식전');
+    document.querySelectorAll('.timing-btn').forEach(b => b.addEventListener('click', () => setTiming(b.dataset.timing)));
+    document.querySelectorAll('.sugar-type-btn').forEach(b => b.addEventListener('click', () => setSugarType(b.dataset.type)));
+  </script>
+</body>
+</html>
