@@ -255,4 +255,434 @@
   </main>
 
   <!-- Bottom Navigation -->
-  <nav class="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-md border-t border-slate-
+  <nav class="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-md border-t border-slate-200 safe-bottom z-50">
+    <div class="max-w-sm mx-auto grid grid-cols-4 py-1 px-1">
+      <button class="nav-btn flex flex-col items-center gap-0.5 py-1 text-blue-600" data-tab="tab-record">
+        <i class="fa-solid fa-pen-to-square text-base"></i>
+        <span class="text-[10px] font-bold">기록</span>
+      </button>
+      <button class="nav-btn flex flex-col items-center gap-0.5 py-1 text-slate-400" data-tab="tab-charts">
+        <i class="fa-solid fa-chart-line text-base"></i>
+        <span class="text-[10px] font-bold">그래프</span>
+      </button>
+      <button class="nav-btn flex flex-col items-center gap-0.5 py-1 text-slate-400" data-tab="tab-history">
+        <i class="fa-solid fa-list-ul text-base"></i>
+        <span class="text-[10px] font-bold">내역</span>
+      </button>
+      <button class="nav-btn flex flex-col items-center gap-0.5 py-1 text-slate-400" data-tab="tab-settings">
+        <i class="fa-solid fa-gear text-base"></i>
+        <span class="text-[10px] font-bold">설정</span>
+      </button>
+    </div>
+  </nav>
+
+  <!-- 텍스트 복원 모달 -->
+  <div id="restore-modal" class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white w-full max-w-xs rounded-2xl p-4 space-y-3">
+      <h3 class="text-xs font-bold text-slate-800">백업 텍스트 붙여넣기</h3>
+      <textarea id="restore-textarea" class="w-full h-32 p-2 text-[11px] font-mono border border-slate-200 rounded-xl focus:outline-none focus:border-blue-500" placeholder="복사해 둔 백업 데이터를 여기에 붙여넣으세요..."></textarea>
+      <div class="grid grid-cols-2 gap-2">
+        <button id="modal-cancel" class="py-2 text-xs font-semibold text-slate-600 bg-slate-100 rounded-xl">취소</button>
+        <button id="modal-apply" class="py-2 text-xs font-bold text-white bg-blue-600 rounded-xl">복원 실행</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let records = JSON.parse(localStorage.getItem('health_records') || '[]');
+    let currentTiming = '아침';
+    let currentSugarType = '식전';
+    let editingId = null; // 현재 수정 중인 기록 ID (null이면 새 기록 모드)
+    let charts = {};
+
+    function getNowTiming() {
+      const h = new Date().getHours();
+      if (h >= 5 && h < 11) return '아침';
+      if (h >= 11 && h < 16) return '점심';
+      if (h >= 16 && h < 21) return '저녁';
+      return '취침전';
+    }
+
+    function updateDateTimeDisplays(dVal, tVal) {
+      if (dVal) {
+        const parts = dVal.split('-');
+        document.getElementById('date-display').innerText = `${parts[0]}. ${parts[1]}. ${parts[2]}.`;
+      }
+      if (tVal) {
+        const [h, m] = tVal.split(':');
+        const numH = parseInt(h, 10);
+        const ampm = numH >= 12 ? '오후' : '오전';
+        const displayH = numH % 12 || 12;
+        document.getElementById('time-display').innerText = `${ampm} ${String(displayH).padStart(2, '0')}:${m}`;
+      }
+    }
+
+    function initHeaderDate() {
+      const now = new Date();
+      const days = ['일', '월', '화', '수', '목', '금', '토'];
+      document.getElementById('header-date').innerText = `${now.getMonth()+1}월 ${now.getDate()}일 (${days[now.getDay()]})`;
+      
+      const pad = n => String(n).padStart(2, '0');
+      const dStr = `${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())}`;
+      const tStr = `${pad(now.getHours())}:${pad(now.getMinutes())}`;
+      
+      const dateInp = document.getElementById('input-date');
+      const timeInp = document.getElementById('input-time');
+      dateInp.value = dStr;
+      timeInp.value = tStr;
+      updateDateTimeDisplays(dStr, tStr);
+
+      dateInp.addEventListener('change', (e) => updateDateTimeDisplays(e.target.value, null));
+      timeInp.addEventListener('change', (e) => updateDateTimeDisplays(null, e.target.value));
+    }
+
+    function setTiming(timing) {
+      currentTiming = timing;
+      document.querySelectorAll('.timing-btn').forEach(btn => {
+        const isMatch = btn.dataset.timing === timing;
+        btn.className = isMatch 
+          ? 'timing-btn flex flex-col items-center justify-center py-2 rounded-xl border-2 border-blue-600 bg-blue-50/50 text-blue-700 transition-all shadow-sm'
+          : 'timing-btn flex flex-col items-center justify-center py-2 rounded-xl border border-slate-200 text-slate-600 transition-all';
+      });
+    }
+
+    function setSugarType(type) {
+      currentSugarType = type;
+      document.querySelectorAll('.sugar-type-btn').forEach(btn => {
+        const isMatch = btn.dataset.type === type;
+        btn.className = isMatch
+          ? 'sugar-type-btn px-2 py-0.5 text-[10px] font-bold rounded bg-white text-emerald-600 shadow-sm transition-all'
+          : 'sugar-type-btn px-2 py-0.5 text-[10px] font-bold rounded text-slate-400 transition-all';
+      });
+    }
+
+    // 새 기록 저장 또는 기존 기록 수정 반영
+    document.getElementById('save-btn').addEventListener('click', () => {
+      const date = document.getElementById('input-date').value;
+      const time = document.getElementById('input-time').value;
+      const bpSys = document.getElementById('bp-sys').value;
+      const bpDia = document.getElementById('bp-dia').value;
+      const pulse = document.getElementById('pulse').value;
+      const sugar = document.getElementById('blood-sugar').value;
+      const weight = document.getElementById('weight').value;
+
+      if (!bpSys && !bpDia && !sugar && !weight) {
+        alert('최소 한 개 이상의 건강 수치를 입력해 주세요.');
+        return;
+      }
+
+      if (editingId !== null) {
+        // 기존 기록 수정 로직
+        const idx = records.findIndex(r => r.id === editingId);
+        if (idx !== -1) {
+          records[idx] = {
+            ...records[idx],
+            date, time,
+            timing: currentTiming,
+            bpSys: bpSys ? Number(bpSys) : null,
+            bpDia: bpDia ? Number(bpDia) : null,
+            pulse: pulse ? Number(pulse) : null,
+            sugar: sugar ? Number(sugar) : null,
+            sugarType: sugar ? currentSugarType : null,
+            weight: weight ? Number(weight) : null
+          };
+          localStorage.setItem('health_records', JSON.stringify(records));
+          alert('기록이 성공적으로 수정되었습니다.');
+        }
+        resetFormToDefault();
+      } else {
+        // 새 기록 추가 로직
+        const item = {
+          id: Date.now(),
+          date, time,
+          timing: currentTiming,
+          bpSys: bpSys ? Number(bpSys) : null,
+          bpDia: bpDia ? Number(bpDia) : null,
+          pulse: pulse ? Number(pulse) : null,
+          sugar: sugar ? Number(sugar) : null,
+          sugarType: sugar ? currentSugarType : null,
+          weight: weight ? Number(weight) : null
+        };
+
+        records.unshift(item);
+        localStorage.setItem('health_records', JSON.stringify(records));
+        alert('성공적으로 기록되었습니다.');
+        resetFormFields();
+      }
+
+      renderHistory();
+    });
+
+    function resetFormFields() {
+      document.getElementById('bp-sys').value = '';
+      document.getElementById('bp-dia').value = '';
+      document.getElementById('pulse').value = '';
+      document.getElementById('blood-sugar').value = '';
+      document.getElementById('weight').value = '';
+    }
+
+    function resetFormToDefault() {
+      editingId = null;
+      resetFormFields();
+      initHeaderDate();
+      setTiming(getNowTiming());
+      setSugarType('식전');
+      document.getElementById('edit-mode-banner').classList.add('hidden');
+      document.getElementById('save-btn').innerText = '기록 저장하기';
+      document.getElementById('save-btn').className = 'w-full py-3.5 bg-blue-600 hover:bg-blue-700 active:scale-[0.98] text-white font-bold rounded-xl shadow-md shadow-blue-500/20 transition-all text-xs';
+    }
+
+    document.getElementById('cancel-edit-btn').addEventListener('click', () => {
+      resetFormToDefault();
+    });
+
+    // 탭 전환 네비게이션
+    function switchTab(tabId) {
+      document.querySelectorAll('main > section').forEach(sec => sec.classList.add('hidden'));
+      document.getElementById(tabId).classList.remove('hidden');
+
+      document.querySelectorAll('.nav-btn').forEach(b => {
+        const isMatch = b.dataset.tab === tabId;
+        b.classList.toggle('text-blue-600', isMatch);
+        b.classList.toggle('text-slate-400', !isMatch);
+      });
+
+      const titles = { 'tab-record': '건강 관리 기록', 'tab-charts': '변화 추이 통계', 'tab-history': '전체 기록 내역', 'tab-settings': '앱 설정 및 백업' };
+      document.getElementById('page-title').innerText = titles[tabId];
+
+      if (tabId === 'tab-charts') renderCharts();
+      if (tabId === 'tab-history') renderHistory();
+    }
+
+    document.querySelectorAll('.nav-btn').forEach(btn => {
+      btn.addEventListener('click', () => switchTab(btn.dataset.tab));
+    });
+
+    // 내역 렌더링 (수정 및 삭제 버튼)
+    function renderHistory() {
+      const container = document.getElementById('history-list');
+      document.getElementById('record-count').innerText = `${records.length}건`;
+      if (records.length === 0) {
+        container.innerHTML = `<div class="p-6 text-center text-xs text-slate-400 bg-white rounded-2xl border border-slate-200">기록된 데이터가 없습니다.</div>`;
+        return;
+      }
+
+      container.innerHTML = records.map(r => `
+        <div class="bg-white p-3 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
+          <div class="flex-1 pr-2">
+            <div class="flex items-center gap-1.5 mb-1">
+              <span class="text-xs font-bold text-slate-800">${r.date} ${r.time}</span>
+              <span class="text-[10px] px-1.5 py-0.5 rounded bg-blue-50 text-blue-700 font-semibold">${r.timing}</span>
+            </div>
+            <div class="text-[11px] text-slate-600 flex flex-wrap gap-x-2">
+              ${r.bpSys ? `<span>혈압: <b class="text-slate-800">${r.bpSys}/${r.bpDia}</b></span>` : ''}
+              ${r.sugar ? `<span>혈당(${r.sugarType}): <b class="text-slate-800">${r.sugar}</b></span>` : ''}
+              ${r.weight ? `<span>체중: <b class="text-slate-800">${r.weight}kg</b></span>` : ''}
+            </div>
+          </div>
+          <div class="flex items-center gap-1 shrink-0">
+            <!-- 수정 버튼 -->
+            <button onclick="startEditRecord(${r.id})" class="text-slate-400 hover:text-blue-600 p-1.5 rounded-lg active:bg-blue-50" title="수정">
+              <i class="fa-solid fa-pen text-xs"></i>
+            </button>
+            <!-- 삭제 버튼 -->
+            <button onclick="deleteRecord(${r.id})" class="text-slate-400 hover:text-rose-500 p-1.5 rounded-lg active:bg-rose-50" title="삭제">
+              <i class="fa-solid fa-trash-can text-xs"></i>
+            </button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    // 기록 수정 모드 시작 함수
+    window.startEditRecord = function(id) {
+      const item = records.find(r => r.id === id);
+      if (!item) return;
+
+      editingId = id;
+
+      // 폼에 값 채워넣기
+      document.getElementById('input-date').value = item.date;
+      document.getElementById('input-time').value = item.time;
+      updateDateTimeDisplays(item.date, item.time);
+      setTiming(item.timing);
+
+      document.getElementById('bp-sys').value = item.bpSys || '';
+      document.getElementById('bp-dia').value = item.bpDia || '';
+      document.getElementById('pulse').value = item.pulse || '';
+      document.getElementById('blood-sugar').value = item.sugar || '';
+      if (item.sugarType) setSugarType(item.sugarType);
+      document.getElementById('weight').value = item.weight || '';
+
+      // 수정 배너 노출 & 저장 버튼 상태 변경
+      document.getElementById('edit-mode-banner').classList.remove('hidden');
+      const saveBtn = document.getElementById('save-btn');
+      saveBtn.innerText = '수정 내용 반영하기';
+      saveBtn.className = 'w-full py-3.5 bg-amber-500 hover:bg-amber-600 active:scale-[0.98] text-white font-bold rounded-xl shadow-md shadow-amber-500/20 transition-all text-xs';
+
+      // 기록 탭으로 자동 이동
+      switchTab('tab-record');
+    };
+
+    window.deleteRecord = function(id) {
+      if (!confirm('이 기록을 삭제하시겠습니까?')) return;
+      records = records.filter(r => r.id !== id);
+      localStorage.setItem('health_records', JSON.stringify(records));
+      if (editingId === id) resetFormToDefault();
+      renderHistory();
+    };
+
+    function renderCharts() {
+      const sorted = [...records].reverse();
+      const labels = sorted.map(r => `${r.date.slice(5)} ${r.timing}`);
+
+      if (charts.bp) charts.bp.destroy();
+      charts.bp = new Chart(document.getElementById('bpChart'), {
+        type: 'line',
+        data: {
+          labels,
+          datasets: [
+            { label: '수축기', data: sorted.map(r => r.bpSys), borderColor: '#f43f5e', tension: 0.3, pointRadius: 2.5 },
+            { label: '이완기', data: sorted.map(r => r.bpDia), borderColor: '#3b82f6', tension: 0.3, pointRadius: 2.5 }
+          ]
+        },
+        options: { responsive: true, maintainAspectRatio: false }
+      });
+
+      if (charts.sugar) charts.sugar.destroy();
+      charts.sugar = new Chart(document.getElementById('sugarChart'), {
+        type: 'line',
+        data: {
+          labels,
+          datasets: [{ label: '혈당', data: sorted.map(r => r.sugar), borderColor: '#10b981', tension: 0.3, pointRadius: 2.5 }]
+        },
+        options: { responsive: true, maintainAspectRatio: false }
+      });
+
+      if (charts.weight) charts.weight.destroy();
+      charts.weight = new Chart(document.getElementById('weightChart'), {
+        type: 'line',
+        data: {
+          labels,
+          datasets: [{ label: '체중(kg)', data: sorted.map(r => r.weight), borderColor: '#6366f1', tension: 0.3, pointRadius: 2.5 }]
+        },
+        options: { responsive: true, maintainAspectRatio: false }
+      });
+    }
+
+    // 백업/공유
+    document.getElementById('backup-share-btn').addEventListener('click', async () => {
+      const dataStr = JSON.stringify(records, null, 2);
+      const filename = `health_backup_${new Date().toISOString().slice(0,10)}.json`;
+      const file = new File([dataStr], filename, { type: 'application/json' });
+
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        try {
+          await navigator.share({
+            files: [file],
+            title: '건강 관리 기록 백업',
+            text: '건강 관리 기록 데이터 백업 파일입니다.'
+          });
+          return;
+        } catch (e) {
+          if (e.name !== 'AbortError') console.error(e);
+        }
+      }
+
+      const blob = new Blob([dataStr], { type: 'application/json' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    });
+
+    // 텍스트 복사 백업
+    document.getElementById('backup-copy-btn').addEventListener('click', () => {
+      const dataStr = JSON.stringify(records);
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(dataStr).then(() => {
+          alert('데이터가 클립보드에 복사되었습니다! 메모장 등에 붙여넣어 보관하세요.');
+        }).catch(() => fallbackCopy(dataStr));
+      } else {
+        fallbackCopy(dataStr);
+      }
+    });
+
+    function fallbackCopy(text) {
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+      alert('데이터가 복사되었습니다!');
+    }
+
+    // 파일 복원
+    document.getElementById('restore-file').addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (event) => applyRestoredData(event.target.result);
+      reader.readAsText(file);
+      e.target.value = '';
+    });
+
+    // 텍스트 붙여넣기 모달
+    const modal = document.getElementById('restore-modal');
+    const textarea = document.getElementById('restore-textarea');
+    document.getElementById('restore-text-btn').addEventListener('click', () => {
+      textarea.value = '';
+      modal.classList.remove('hidden');
+    });
+    document.getElementById('modal-cancel').addEventListener('click', () => modal.classList.add('hidden'));
+    document.getElementById('modal-apply').addEventListener('click', () => {
+      const val = textarea.value.trim();
+      if (!val) {
+        alert('데이터를 입력해 주세요.');
+        return;
+      }
+      if (applyRestoredData(val)) modal.classList.add('hidden');
+    });
+
+    function applyRestoredData(jsonString) {
+      try {
+        const parsed = JSON.parse(jsonString);
+        if (Array.isArray(parsed)) {
+          records = parsed;
+          localStorage.setItem('health_records', JSON.stringify(records));
+          alert(`성공적으로 ${records.length}건의 기록이 복원되었습니다.`);
+          renderHistory();
+          return true;
+        } else {
+          alert('올바른 백업 데이터 형식이 아닙니다.');
+          return false;
+        }
+      } catch (err) {
+        alert('데이터를 읽는 중 오류가 발생했습니다.');
+        return false;
+      }
+    }
+
+    // 전체 초기화
+    document.getElementById('clear-all-btn').addEventListener('click', () => {
+      if (confirm('모든 기록을 삭제하시겠습니까? 복구할 수 없습니다.')) {
+        records = [];
+        localStorage.removeItem('health_records');
+        resetFormToDefault();
+        renderHistory();
+        alert('초기화되었습니다.');
+      }
+    });
+
+    // 시작 시 기본값 세팅
+    initHeaderDate();
+    setTiming(getNowTiming());
+    setSugarType('식전');
+    document.querySelectorAll('.timing-btn').forEach(b => b.addEventListener('click', () => setTiming(b.dataset.timing)));
+    document.querySelectorAll('.sugar-type-btn').forEach(b => b.addEventListener('click', () => setSugarType(b.dataset.type)));
+  </script>
+</body>
+</html>
