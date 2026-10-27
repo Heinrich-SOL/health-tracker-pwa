@@ -47,7 +47,7 @@
 
     <!-- TAB 1: Record Input -->
     <section id="tab-record" class="space-y-3">
-      <!-- 수정 모드 표시 배너 (평소엔 숨김) -->
+      <!-- 수정 모드 표시 배너 -->
       <div id="edit-mode-banner" class="hidden bg-amber-50 border border-amber-200 px-3 py-2 rounded-xl flex items-center justify-between">
         <span class="text-xs font-bold text-amber-700 flex items-center gap-1.5">
           <i class="fa-solid fa-pen text-amber-600"></i> 과거 기록 수정 중
@@ -176,27 +176,37 @@
       </button>
     </section>
 
-    <!-- TAB 2: Charts -->
-    <section id="tab-charts" class="space-y-3 hidden">
-      <div class="bg-white p-3 rounded-2xl border border-slate-200 shadow-sm">
-        <h2 class="text-xs font-bold text-slate-600 mb-2 flex items-center gap-1.5">
-          <i class="fa-solid fa-chart-line text-rose-500"></i> 혈압 변화 추이
-        </h2>
-        <div class="h-44">
-          <canvas id="bpChart"></canvas>
-        </div>
+    <!-- TAB 2: Charts (아침/점심/저녁 다중 라인 표기) -->
+    <section id="tab-charts" class="space-y-3.5 hidden">
+      <!-- 안내 문구 -->
+      <div class="px-1 text-[11px] text-slate-400">
+        * 상단 범례(아침/점심/저녁)를 누르면 해당 선만 켜고 끌 수 있습니다.
       </div>
-      <div class="bg-white p-3 rounded-2xl border border-slate-200 shadow-sm">
-        <h2 class="text-xs font-bold text-slate-600 mb-2 flex items-center gap-1.5">
-          <i class="fa-solid fa-chart-simple text-emerald-500"></i> 혈당 변화 추이
+
+      <!-- 혈당 차트 (아침/점심/저녁 시간대별 곡선) -->
+      <div class="bg-white p-3.5 rounded-2xl border border-slate-200 shadow-sm">
+        <h2 class="text-xs font-bold text-slate-700 mb-2.5 flex items-center gap-1.5">
+          <i class="fa-solid fa-chart-line text-emerald-500"></i> 시간대별 혈당 변화 (mg/dL)
         </h2>
-        <div class="h-44">
+        <div class="h-52">
           <canvas id="sugarChart"></canvas>
         </div>
       </div>
-      <div class="bg-white p-3 rounded-2xl border border-slate-200 shadow-sm">
-        <h2 class="text-xs font-bold text-slate-600 mb-2 flex items-center gap-1.5">
-          <i class="fa-solid fa-weight-scale text-indigo-500"></i> 체중 변화 추이
+
+      <!-- 혈압 차트 (시간대별 수축기 추이) -->
+      <div class="bg-white p-3.5 rounded-2xl border border-slate-200 shadow-sm">
+        <h2 class="text-xs font-bold text-slate-700 mb-2.5 flex items-center gap-1.5">
+          <i class="fa-solid fa-heart-pulse text-rose-500"></i> 시간대별 수축기 혈압 (mmHg)
+        </h2>
+        <div class="h-52">
+          <canvas id="bpChart"></canvas>
+        </div>
+      </div>
+
+      <!-- 체중 차트 (시간대별 체중 추이) -->
+      <div class="bg-white p-3.5 rounded-2xl border border-slate-200 shadow-sm">
+        <h2 class="text-xs font-bold text-slate-700 mb-2.5 flex items-center gap-1.5">
+          <i class="fa-solid fa-weight-scale text-indigo-500"></i> 체중 변화 추이 (kg)
         </h2>
         <div class="h-44">
           <canvas id="weightChart"></canvas>
@@ -204,7 +214,7 @@
       </div>
     </section>
 
-    <!-- TAB 3: History (수정 및 삭제 지원) -->
+    <!-- TAB 3: History -->
     <section id="tab-history" class="space-y-2 hidden">
       <div class="flex justify-between items-center px-1">
         <span class="text-xs font-bold text-slate-500">최근 기록 내역</span>
@@ -292,7 +302,7 @@
     let records = JSON.parse(localStorage.getItem('health_records') || '[]');
     let currentTiming = '아침';
     let currentSugarType = '식전';
-    let editingId = null; // 현재 수정 중인 기록 ID (null이면 새 기록 모드)
+    let editingId = null;
     let charts = {};
 
     function getNowTiming() {
@@ -356,7 +366,7 @@
       });
     }
 
-    // 새 기록 저장 또는 기존 기록 수정 반영
+    // 저장 & 수정
     document.getElementById('save-btn').addEventListener('click', () => {
       const date = document.getElementById('input-date').value;
       const time = document.getElementById('input-time').value;
@@ -372,7 +382,6 @@
       }
 
       if (editingId !== null) {
-        // 기존 기록 수정 로직
         const idx = records.findIndex(r => r.id === editingId);
         if (idx !== -1) {
           records[idx] = {
@@ -391,7 +400,6 @@
         }
         resetFormToDefault();
       } else {
-        // 새 기록 추가 로직
         const item = {
           id: Date.now(),
           date, time,
@@ -436,7 +444,6 @@
       resetFormToDefault();
     });
 
-    // 탭 전환 네비게이션
     function switchTab(tabId) {
       document.querySelectorAll('main > section').forEach(sec => sec.classList.add('hidden'));
       document.getElementById(tabId).classList.remove('hidden');
@@ -458,7 +465,6 @@
       btn.addEventListener('click', () => switchTab(btn.dataset.tab));
     });
 
-    // 내역 렌더링 (수정 및 삭제 버튼)
     function renderHistory() {
       const container = document.getElementById('history-list');
       document.getElementById('record-count').innerText = `${records.length}건`;
@@ -481,11 +487,9 @@
             </div>
           </div>
           <div class="flex items-center gap-1 shrink-0">
-            <!-- 수정 버튼 -->
             <button onclick="startEditRecord(${r.id})" class="text-slate-400 hover:text-blue-600 p-1.5 rounded-lg active:bg-blue-50" title="수정">
               <i class="fa-solid fa-pen text-xs"></i>
             </button>
-            <!-- 삭제 버튼 -->
             <button onclick="deleteRecord(${r.id})" class="text-slate-400 hover:text-rose-500 p-1.5 rounded-lg active:bg-rose-50" title="삭제">
               <i class="fa-solid fa-trash-can text-xs"></i>
             </button>
@@ -494,14 +498,11 @@
       `).join('');
     }
 
-    // 기록 수정 모드 시작 함수
     window.startEditRecord = function(id) {
       const item = records.find(r => r.id === id);
       if (!item) return;
 
       editingId = id;
-
-      // 폼에 값 채워넣기
       document.getElementById('input-date').value = item.date;
       document.getElementById('input-time').value = item.time;
       updateDateTimeDisplays(item.date, item.time);
@@ -514,13 +515,11 @@
       if (item.sugarType) setSugarType(item.sugarType);
       document.getElementById('weight').value = item.weight || '';
 
-      // 수정 배너 노출 & 저장 버튼 상태 변경
       document.getElementById('edit-mode-banner').classList.remove('hidden');
       const saveBtn = document.getElementById('save-btn');
       saveBtn.innerText = '수정 내용 반영하기';
       saveBtn.className = 'w-full py-3.5 bg-amber-500 hover:bg-amber-600 active:scale-[0.98] text-white font-bold rounded-xl shadow-md shadow-amber-500/20 transition-all text-xs';
 
-      // 기록 탭으로 자동 이동
       switchTab('tab-record');
     };
 
@@ -532,41 +531,87 @@
       renderHistory();
     };
 
+    // === 아침/점심/저녁 다중 곡선 차트 렌더링 ===
     function renderCharts() {
+      // 1. 날짜별 유니크 키 추출 (오름차순)
       const sorted = [...records].reverse();
-      const labels = sorted.map(r => `${r.date.slice(5)} ${r.timing}`);
+      const uniqueDates = Array.from(new Set(sorted.map(r => r.date)));
+      const xLabels = uniqueDates.map(d => d.slice(5)); // '10-28' 형태
 
-      if (charts.bp) charts.bp.destroy();
-      charts.bp = new Chart(document.getElementById('bpChart'), {
-        type: 'line',
-        data: {
-          labels,
-          datasets: [
-            { label: '수축기', data: sorted.map(r => r.bpSys), borderColor: '#f43f5e', tension: 0.3, pointRadius: 2.5 },
-            { label: '이완기', data: sorted.map(r => r.bpDia), borderColor: '#3b82f6', tension: 0.3, pointRadius: 2.5 }
-          ]
+      // 날짜 & 시간대별 데이터 맵핑 헬퍼
+      const getDataByTiming = (timing, field) => {
+        return uniqueDates.map(date => {
+          // 해당 날짜의 해당 시간대 기록 찾기
+          const found = sorted.find(r => r.date === date && r.timing === timing);
+          return found && found[field] !== null ? found[field] : null;
+        });
+      };
+
+      const baseOptions = {
+        responsive: true,
+        maintainAspectRatio: false,
+        spanGaps: true, // 기록이 없는 날짜는 선을 자연스럽게 연결
+        plugins: {
+          legend: {
+            position: 'top',
+            labels: { boxWidth: 10, padding: 8, font: { size: 10, weight: 'bold' } }
+          },
+          tooltip: {
+            callbacks: {
+              title: (items) => `${uniqueDates[items[0].dataIndex]}`
+            }
+          }
         },
-        options: { responsive: true, maintainAspectRatio: false }
-      });
+        scales: {
+          x: { ticks: { font: { size: 10 }, maxRotation: 45 } },
+          y: { ticks: { font: { size: 10 } } }
+        }
+      };
 
+      // 1. 혈당 차트 (아침, 점심, 저녁, 취침전 4선 동시 표기)
       if (charts.sugar) charts.sugar.destroy();
       charts.sugar = new Chart(document.getElementById('sugarChart'), {
         type: 'line',
         data: {
-          labels,
-          datasets: [{ label: '혈당', data: sorted.map(r => r.sugar), borderColor: '#10b981', tension: 0.3, pointRadius: 2.5 }]
+          labels: xLabels,
+          datasets: [
+            { label: '아침', data: getDataByTiming('아침', 'sugar'), borderColor: '#f59e0b', backgroundColor: '#f59e0b', tension: 0.3, pointRadius: 3.5 },
+            { label: '점심', data: getDataByTiming('점심', 'sugar'), borderColor: '#fb923c', backgroundColor: '#fb923c', tension: 0.3, pointRadius: 3.5 },
+            { label: '저녁', data: getDataByTiming('저녁', 'sugar'), borderColor: '#ef4444', backgroundColor: '#ef4444', tension: 0.3, pointRadius: 3.5 },
+            { label: '취침전', data: getDataByTiming('취침전', 'sugar'), borderColor: '#6366f1', backgroundColor: '#6366f1', tension: 0.3, pointRadius: 3.5 }
+          ]
         },
-        options: { responsive: true, maintainAspectRatio: false }
+        options: baseOptions
       });
 
+      // 2. 혈압 차트 (시간대별 수축기 혈압 분리)
+      if (charts.bp) charts.bp.destroy();
+      charts.bp = new Chart(document.getElementById('bpChart'), {
+        type: 'line',
+        data: {
+          labels: xLabels,
+          datasets: [
+            { label: '아침 혈압', data: getDataByTiming('아침', 'bpSys'), borderColor: '#f59e0b', backgroundColor: '#f59e0b', tension: 0.3, pointRadius: 3.5 },
+            { label: '점심 혈압', data: getDataByTiming('점심', 'bpSys'), borderColor: '#fb923c', backgroundColor: '#fb923c', tension: 0.3, pointRadius: 3.5 },
+            { label: '저녁 혈압', data: getDataByTiming('저녁', 'bpSys'), borderColor: '#ef4444', backgroundColor: '#ef4444', tension: 0.3, pointRadius: 3.5 },
+            { label: '취침전', data: getDataByTiming('취침전', 'bpSys'), borderColor: '#6366f1', backgroundColor: '#6366f1', tension: 0.3, pointRadius: 3.5 }
+          ]
+        },
+        options: baseOptions
+      });
+
+      // 3. 체중 차트 (아침 공복 체중 vs 저녁 체중)
       if (charts.weight) charts.weight.destroy();
       charts.weight = new Chart(document.getElementById('weightChart'), {
         type: 'line',
         data: {
-          labels,
-          datasets: [{ label: '체중(kg)', data: sorted.map(r => r.weight), borderColor: '#6366f1', tension: 0.3, pointRadius: 2.5 }]
+          labels: xLabels,
+          datasets: [
+            { label: '아침 체중', data: getDataByTiming('아침', 'weight'), borderColor: '#f59e0b', backgroundColor: '#f59e0b', tension: 0.3, pointRadius: 3.5 },
+            { label: '저녁 체중', data: getDataByTiming('저녁', 'weight'), borderColor: '#3b82f6', backgroundColor: '#3b82f6', tension: 0.3, pointRadius: 3.5 }
+          ]
         },
-        options: { responsive: true, maintainAspectRatio: false }
+        options: baseOptions
       });
     }
 
@@ -630,7 +675,7 @@
       e.target.value = '';
     });
 
-    // 텍스트 붙여넣기 모달
+    // 텍스트 복원
     const modal = document.getElementById('restore-modal');
     const textarea = document.getElementById('restore-textarea');
     document.getElementById('restore-text-btn').addEventListener('click', () => {
@@ -666,7 +711,7 @@
       }
     }
 
-    // 전체 초기화
+    // 초기화
     document.getElementById('clear-all-btn').addEventListener('click', () => {
       if (confirm('모든 기록을 삭제하시겠습니까? 복구할 수 없습니다.')) {
         records = [];
@@ -677,7 +722,6 @@
       }
     });
 
-    // 시작 시 기본값 세팅
     initHeaderDate();
     setTiming(getNowTiming());
     setSugarType('식전');
