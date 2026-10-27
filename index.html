@@ -49,6 +49,7 @@
           <span class="text-[11px] font-medium text-blue-600" id="timing-auto-badge">자동 선택됨</span>
         </div>
 
+        <!-- 아침/점심/저녁/취침전 버튼 -->
         <div class="grid grid-cols-4 gap-1.5">
           <button type="button" class="timing-btn flex flex-col items-center justify-center py-2.5 rounded-2xl border border-slate-200 text-slate-600 transition-all" data-timing="아침">
             <i class="fa-solid fa-sun text-amber-500 text-sm mb-1"></i>
@@ -68,84 +69,6 @@
           </button>
         </div>
 
-        <!-- 50:50 밀림 방지 그리드 -->
-        <div class="grid grid-cols-2 gap-2 pt-1">
-          <div class="flex items-center justify-center p-2.5 bg-slate-50 rounded-xl border border-slate-200">
-            <input type="date" id="input-date" class="w-full text-center text-xs font-semibold text-slate-700 bg-transparent border-none p-0 focus:outline-none">
-          </div>
-          <div class="flex items-center justify-center p-2.5 bg-slate-50 rounded-xl border border-slate-200">
-            <input type="time" id="input-time" class="w-full text-center text-xs font-semibold text-slate-700 bg-transparent border-none p-0 focus:outline-none">
-          </div>
-        </div>
-      </div>
-
-      <!-- Blood Pressure Card -->
-      <div class="bg-white p-4 rounded-3xl border border-slate-200/80 shadow-sm space-y-3">
-        <div class="flex items-center justify-between">
-          <div class="flex items-center gap-1.5 text-xs font-bold text-slate-700">
-            <span class="w-2 h-2 rounded-full bg-rose-500"></span> 혈압 및 맥박
-          </div>
-          <span class="text-[11px] text-slate-400">정상: 120 / 80 mmHg</span>
-        </div>
-        <div class="grid grid-cols-3 gap-2">
-          <div class="bg-slate-50 p-2.5 rounded-2xl border border-slate-200/80 text-center">
-            <span class="text-[10px] text-slate-400 font-semibold block mb-1">수축기 (최고)</span>
-            <input type="number" id="bp-sys" placeholder="120" inputmode="numeric" class="w-full text-center text-lg font-bold text-slate-900 bg-transparent focus:outline-none">
-            <span class="text-[9px] text-slate-400">mmHg</span>
-          </div>
-          <div class="bg-slate-50 p-2.5 rounded-2xl border border-slate-200/80 text-center">
-            <span class="text-[10px] text-slate-400 font-semibold block mb-1">이완기 (최저)</span>
-            <input type="number" id="bp-dia" placeholder="80" inputmode="numeric" class="w-full text-center text-lg font-bold text-slate-900 bg-transparent focus:outline-none">
-            <span class="text-[9px] text-slate-400">mmHg</span>
-          </div>
-          <div class="bg-slate-50 p-2.5 rounded-2xl border border-slate-200/80 text-center">
-            <span class="text-[10px] text-slate-400 font-semibold block mb-1">맥박수</span>
-            <input type="number" id="pulse" placeholder="72" inputmode="numeric" class="w-full text-center text-lg font-bold text-slate-900 bg-transparent focus:outline-none">
-            <span class="text-[9px] text-slate-400">bpm</span>
-          </div>
-        </div>
-      </div>
-
-      <!-- Blood Glucose Card -->
-      <div class="bg-white p-4 rounded-3xl border border-slate-200/80 shadow-sm space-y-3">
-        <div class="flex items-center justify-between">
-          <div class="flex items-center gap-1.5 text-xs font-bold text-slate-700">
-            <span class="w-2 h-2 rounded-full bg-emerald-500"></span> 혈당
-          </div>
-          <div class="flex bg-slate-100 p-0.5 rounded-xl border border-slate-200">
-            <button type="button" class="sugar-type-btn px-2.5 py-1 text-[11px] font-bold rounded-lg transition-all" data-type="식전">식전</button>
-            <button type="button" class="sugar-type-btn px-2.5 py-1 text-[11px] font-bold rounded-lg transition-all" data-type="식후 2시간">식후 2시간</button>
-          </div>
-        </div>
-        <div class="bg-slate-50 p-3 rounded-2xl border border-slate-200/80 flex items-center justify-between px-4">
-          <span class="text-xs font-semibold text-slate-500">혈당 수치</span>
-          <div class="flex items-baseline gap-1">
-            <input type="number" id="blood-sugar" placeholder="100" inputmode="numeric" class="w-24 text-right text-lg font-bold text-slate-900 bg-transparent focus:outline-none">
-            <span class="text-xs text-slate-400 font-medium">mg/dL</span>
-          </div>
-        </div>
-      </div>
-
-      <!-- Weight Card -->
-      <div class="bg-white p-4 rounded-3xl border border-slate-200/80 shadow-sm space-y-3">
-        <div class="flex items-center gap-1.5 text-xs font-bold text-slate-700">
-          <span class="w-2 h-2 rounded-full bg-indigo-500"></span> 몸무게
-        </div>
-        <div class="bg-slate-50 p-3 rounded-2xl border border-slate-200/80 flex items-center justify-between px-4">
-          <span class="text-xs font-semibold text-slate-500">현재 체중</span>
-          <div class="flex items-baseline gap-1">
-            <input type="number" id="weight" step="0.1" placeholder="70.0" inputmode="decimal" class="w-24 text-right text-lg font-bold text-slate-900 bg-transparent focus:outline-none">
-            <span class="text-xs text-slate-400 font-medium">kg</span>
-          </div>
-        </div>
-      </div>
-
-      <button id="save-btn" class="w-full py-4 bg-blue-600 hover:bg-blue-700 active:scale-[0.98] text-white font-bold rounded-2xl shadow-lg shadow-blue-500/25 transition-all text-sm">
-        기록 저장하기
-      </button>
-    </section>
-
-    <!-- TAB 2: Charts -->
-    <section id="tab-charts" class="space-y-4 hidden">
-      <div class="bg-white p-4 rounded-3xl border border-slate-200/80 shadow-sm">
-        <h2 class="text-xs font-bold text-slate-600 mb-3 flex items-center gap-1.5
+        <!-- 아이폰 12 미니 최적화: 날짜/시간 상하 2줄 분리 (밀림 100% 방지) -->
+        <div class="space-y-2 pt-1">
+          <div class="flex items-center justify-between px-3 py-2.5 bg-slate-50 rounded-xl border border
