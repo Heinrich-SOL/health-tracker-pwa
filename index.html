@@ -207,7 +207,7 @@
       </button>
     </section>
 
-    <!-- TAB 2: Charts (상하/좌우 여백 확대로 숫자 잘림 완벽 방지) -->
+    <!-- TAB 2: Charts (가독성 극대화: 12px 굵은 글씨 + 반투명 뱃지 배경) -->
     <section id="tab-charts" class="space-y-4 hidden">
       
       <!-- 1. 혈당 차트 -->
@@ -230,8 +230,7 @@
 
         <div class="grid grid-cols-4 gap-1.5" id="sugar-legend-container"></div>
         
-        <!-- 높이 h-60 확보 -->
-        <div class="h-60 pt-2">
+        <div class="h-64 pt-2">
           <canvas id="sugarChart"></canvas>
         </div>
       </div>
@@ -245,8 +244,7 @@
           <span class="text-[10px] text-slate-400">버튼 터치로 On/Off</span>
         </div>
         <div class="grid grid-cols-4 gap-1.5" id="bp-legend-container"></div>
-        <!-- 높이 h-60 확보 -->
-        <div class="h-60 pt-2">
+        <div class="h-64 pt-2">
           <canvas id="bpChart"></canvas>
         </div>
       </div>
@@ -260,7 +258,6 @@
           <span class="text-[10px] text-slate-400">버튼 터치로 On/Off</span>
         </div>
         <div class="grid grid-cols-4 gap-1.5" id="weight-legend-container"></div>
-        <!-- 높이 h-56 확보 -->
         <div class="h-56 pt-2">
           <canvas id="weightChart"></canvas>
         </div>
@@ -672,6 +669,24 @@
       });
     }
 
+    // === 가독성을 극대화한 Datalabels 공통 설정 (12px + 굵은 글씨 + 반투명 뱃지) ===
+    const highLegibilityDataLabels = {
+      align: 'top',
+      anchor: 'end',
+      offset: 5,
+      // 가독성 핵심: 12px 크기, 800 두께
+      font: { size: 12, weight: '800' },
+      color: (ctx) => ctx.dataset.borderColor,
+      formatter: (value) => value !== null ? value : '',
+      // 배경에 깔끔한 화이트 반투명 뱃지 적용 (선과 겹쳐도 또렷함)
+      backgroundColor: 'rgba(255, 255, 255, 0.92)',
+      borderRadius: 6,
+      borderWidth: 1,
+      borderColor: (ctx) => `${ctx.dataset.borderColor}50`,
+      padding: { top: 2, bottom: 1, left: 4, right: 4 },
+      clip: false
+    };
+
     // 1. 혈당 단독 렌더링
     function renderSugarChart() {
       const sorted = [...records].reverse();
@@ -696,10 +711,10 @@
         data: {
           labels: xLabels,
           datasets: [
-            { label: '아침', data: getSugarData('아침', currentSugarMode), borderColor: '#0284c7', backgroundColor: '#0284c7', tension: 0.3, pointStyle: 'rectRounded', pointRadius: 5.5, pointHoverRadius: 7.5 },
-            { label: '점심', data: getSugarData('점심', currentSugarMode), borderColor: '#16a34a', backgroundColor: '#16a34a', tension: 0.3, pointStyle: 'rectRounded', pointRadius: 5.5, pointHoverRadius: 7.5 },
-            { label: '저녁', data: getSugarData('저녁', currentSugarMode), borderColor: '#e11d48', backgroundColor: '#e11d48', tension: 0.3, pointStyle: 'rectRounded', pointRadius: 5.5, pointHoverRadius: 7.5 },
-            { label: '취침전', data: getSugarData('취침전', currentSugarMode), borderColor: '#7c3aed', backgroundColor: '#7c3aed', tension: 0.3, pointStyle: 'rectRounded', pointRadius: 5.5, pointHoverRadius: 7.5 }
+            { label: '아침', data: getSugarData('아침', currentSugarMode), borderColor: '#0284c7', backgroundColor: '#0284c7', tension: 0.3, pointStyle: 'rectRounded', pointRadius: 6, pointHoverRadius: 8 },
+            { label: '점심', data: getSugarData('점심', currentSugarMode), borderColor: '#16a34a', backgroundColor: '#16a34a', tension: 0.3, pointStyle: 'rectRounded', pointRadius: 6, pointHoverRadius: 8 },
+            { label: '저녁', data: getSugarData('저녁', currentSugarMode), borderColor: '#e11d48', backgroundColor: '#e11d48', tension: 0.3, pointStyle: 'rectRounded', pointRadius: 6, pointHoverRadius: 8 },
+            { label: '취침전', data: getSugarData('취침전', currentSugarMode), borderColor: '#7c3aed', backgroundColor: '#7c3aed', tension: 0.3, pointStyle: 'rectRounded', pointRadius: 6, pointHoverRadius: 8 }
           ]
         },
         options: {
@@ -707,24 +722,16 @@
           maintainAspectRatio: false,
           spanGaps: true,
           layout: {
-            padding: { top: 25, bottom: 5, left: 5, right: 10 }
+            padding: { top: 32, bottom: 5, left: 8, right: 12 }
           },
           plugins: {
             legend: { display: false },
             tooltip: { callbacks: { title: (items) => `${uniqueDates[items[0].dataIndex]}` } },
-            datalabels: {
-              align: 'top',
-              anchor: 'end',
-              offset: 3,
-              font: { size: 9, weight: 'bold' },
-              color: (ctx) => ctx.dataset.borderColor,
-              formatter: (value) => value !== null ? value : '',
-              clip: false
-            }
+            datalabels: highLegibilityDataLabels
           },
           scales: {
-            x: { ticks: { font: { size: 10 }, maxRotation: 45 } },
-            y: { ticks: { font: { size: 10 } }, grace: '18%' }
+            x: { ticks: { font: { size: 10, weight: '600' }, maxRotation: 45 } },
+            y: { ticks: { font: { size: 10, weight: '600' } }, grace: '25%' }
           }
         }
       });
@@ -749,24 +756,16 @@
         maintainAspectRatio: false,
         spanGaps: true,
         layout: {
-          padding: { top: 25, bottom: 5, left: 5, right: 10 }
+          padding: { top: 32, bottom: 5, left: 8, right: 12 }
         },
         plugins: {
           legend: { display: false },
           tooltip: { callbacks: { title: (items) => `${uniqueDates[items[0].dataIndex]}` } },
-          datalabels: {
-            align: 'top',
-            anchor: 'end',
-            offset: 3,
-            font: { size: 9, weight: 'bold' },
-            color: (ctx) => ctx.dataset.borderColor,
-            formatter: (value) => value !== null ? value : '',
-            clip: false
-          }
+          datalabels: highLegibilityDataLabels
         },
         scales: {
-          x: { ticks: { font: { size: 10 }, maxRotation: 45 } },
-          y: { ticks: { font: { size: 10 } }, grace: '18%' }
+          x: { ticks: { font: { size: 10, weight: '600' }, maxRotation: 45 } },
+          y: { ticks: { font: { size: 10, weight: '600' } }, grace: '25%' }
         }
       };
 
@@ -779,13 +778,13 @@
         data: {
           labels: xLabels,
           datasets: [
-            { label: '아침 수축기', data: getFieldData('아침', 'bpSys'), borderColor: '#0284c7', backgroundColor: '#0284c7', tension: 0.3, pointStyle: 'rectRounded', pointRadius: 5.5, pointHoverRadius: 7.5 },
+            { label: '아침 수축기', data: getFieldData('아침', 'bpSys'), borderColor: '#0284c7', backgroundColor: '#0284c7', tension: 0.3, pointStyle: 'rectRounded', pointRadius: 6, pointHoverRadius: 8 },
             { label: '아침 이완기', data: getFieldData('아침', 'bpDia'), borderColor: '#0284c7', borderDash: [4, 4], backgroundColor: '#0284c7', tension: 0.3, pointStyle: 'rectRounded', pointRadius: 5, pointHoverRadius: 7 },
-            { label: '점심 수축기', data: getFieldData('점심', 'bpSys'), borderColor: '#16a34a', backgroundColor: '#16a34a', tension: 0.3, pointStyle: 'rectRounded', pointRadius: 5.5, pointHoverRadius: 7.5 },
+            { label: '점심 수축기', data: getFieldData('점심', 'bpSys'), borderColor: '#16a34a', backgroundColor: '#16a34a', tension: 0.3, pointStyle: 'rectRounded', pointRadius: 6, pointHoverRadius: 8 },
             { label: '점심 이완기', data: getFieldData('점심', 'bpDia'), borderColor: '#16a34a', borderDash: [4, 4], backgroundColor: '#16a34a', tension: 0.3, pointStyle: 'rectRounded', pointRadius: 5, pointHoverRadius: 7 },
-            { label: '저녁 수축기', data: getFieldData('저녁', 'bpSys'), borderColor: '#e11d48', backgroundColor: '#e11d48', tension: 0.3, pointStyle: 'rectRounded', pointRadius: 5.5, pointHoverRadius: 7.5 },
+            { label: '저녁 수축기', data: getFieldData('저녁', 'bpSys'), borderColor: '#e11d48', backgroundColor: '#e11d48', tension: 0.3, pointStyle: 'rectRounded', pointRadius: 6, pointHoverRadius: 8 },
             { label: '저녁 이완기', data: getFieldData('저녁', 'bpDia'), borderColor: '#e11d48', borderDash: [4, 4], backgroundColor: '#e11d48', tension: 0.3, pointStyle: 'rectRounded', pointRadius: 5, pointHoverRadius: 7 },
-            { label: '취침전 수축기', data: getFieldData('취침전', 'bpSys'), borderColor: '#7c3aed', backgroundColor: '#7c3aed', tension: 0.3, pointStyle: 'rectRounded', pointRadius: 5.5, pointHoverRadius: 7.5 },
+            { label: '취침전 수축기', data: getFieldData('취침전', 'bpSys'), borderColor: '#7c3aed', backgroundColor: '#7c3aed', tension: 0.3, pointStyle: 'rectRounded', pointRadius: 6, pointHoverRadius: 8 },
             { label: '취침전 이완기', data: getFieldData('취침전', 'bpDia'), borderColor: '#7c3aed', borderDash: [4, 4], backgroundColor: '#7c3aed', tension: 0.3, pointStyle: 'rectRounded', pointRadius: 5, pointHoverRadius: 7 }
           ]
         },
@@ -800,10 +799,10 @@
         data: {
           labels: xLabels,
           datasets: [
-            { label: '아침', data: getFieldData('아침', 'weight'), borderColor: '#0284c7', backgroundColor: '#0284c7', tension: 0.3, pointStyle: 'rectRounded', pointRadius: 5.5, pointHoverRadius: 7.5 },
-            { label: '점심', data: getFieldData('점심', 'weight'), borderColor: '#16a34a', backgroundColor: '#16a34a', tension: 0.3, pointStyle: 'rectRounded', pointRadius: 5.5, pointHoverRadius: 7.5 },
-            { label: '저녁', data: getFieldData('저녁', 'weight'), borderColor: '#e11d48', backgroundColor: '#e11d48', tension: 0.3, pointStyle: 'rectRounded', pointRadius: 5.5, pointHoverRadius: 7.5 },
-            { label: '취침전', data: getFieldData('취침전', 'weight'), borderColor: '#7c3aed', backgroundColor: '#7c3aed', tension: 0.3, pointStyle: 'rectRounded', pointRadius: 5.5, pointHoverRadius: 7.5 }
+            { label: '아침', data: getFieldData('아침', 'weight'), borderColor: '#0284c7', backgroundColor: '#0284c7', tension: 0.3, pointStyle: 'rectRounded', pointRadius: 6, pointHoverRadius: 8 },
+            { label: '점심', data: getFieldData('점심', 'weight'), borderColor: '#16a34a', backgroundColor: '#16a34a', tension: 0.3, pointStyle: 'rectRounded', pointRadius: 6, pointHoverRadius: 8 },
+            { label: '저녁', data: getFieldData('저녁', 'weight'), borderColor: '#e11d48', backgroundColor: '#e11d48', tension: 0.3, pointStyle: 'rectRounded', pointRadius: 6, pointHoverRadius: 8 },
+            { label: '취침전', data: getFieldData('취침전', 'weight'), borderColor: '#7c3aed', backgroundColor: '#7c3aed', tension: 0.3, pointStyle: 'rectRounded', pointRadius: 6, pointHoverRadius: 8 }
           ]
         },
         options: baseOptions
