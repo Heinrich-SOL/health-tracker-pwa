@@ -154,7 +154,6 @@
           <div class="flex items-center gap-1.5 text-sm font-bold text-slate-800">
             <span class="w-2.5 h-2.5 rounded-full bg-rose-500"></span> 혈압 및 맥박
           </div>
-          <!-- 빠른 팝업 연속 입력 버튼 -->
           <button type="button" id="btn-open-bp-popup" class="text-xs font-bold px-2.5 py-1 bg-rose-50 text-rose-600 rounded-lg border border-rose-200 hover:bg-rose-100 flex items-center gap-1 transition-all">
             <i class="fa-solid fa-calculator text-[11px]"></i> 연속 입력
           </button>
@@ -511,7 +510,7 @@
     </div>
   </div>
 
-  <!-- 혈압 연속 입력 팝업 모달 (다음 버튼 추가 및 2자리 스마트 이동 적용) -->
+  <!-- 혈압 연속 입력 팝업 모달 -->
   <div id="bp-popup-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
     <div class="bg-white w-full max-w-xs rounded-2xl p-4 space-y-3.5 shadow-xl">
       <div class="flex items-center justify-between pb-1.5 border-b border-slate-100">
@@ -525,33 +524,28 @@
       </div>
 
       <div class="space-y-2.5">
-        <!-- 1. 수축기 -->
         <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-200 flex items-center justify-between px-3 focus-within:border-blue-500 focus-within:bg-blue-50/20 transition-all">
           <span class="text-xs font-bold text-slate-700">1. 수축기 (최고)</span>
           <div class="flex items-center gap-1.5">
             <input type="number" id="pop-bp-sys" placeholder="120" inputmode="numeric" class="w-14 text-right text-lg font-extrabold text-slate-900 bg-transparent focus:outline-none p-0">
             <span class="text-xs text-slate-400 font-semibold mr-1">mmHg</span>
-            <!-- 다음 버튼 -->
             <button type="button" id="btn-next-to-dia" class="px-2 py-1 bg-blue-500 text-white text-[11px] font-bold rounded-lg active:scale-95 transition-all">
               다음
             </button>
           </div>
         </div>
 
-        <!-- 2. 이완기 -->
         <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-200 flex items-center justify-between px-3 focus-within:border-blue-500 focus-within:bg-blue-50/20 transition-all">
           <span class="text-xs font-bold text-slate-700">2. 이완기 (최저)</span>
           <div class="flex items-center gap-1.5">
             <input type="number" id="pop-bp-dia" placeholder="80" inputmode="numeric" class="w-14 text-right text-lg font-extrabold text-slate-900 bg-transparent focus:outline-none p-0">
             <span class="text-xs text-slate-400 font-semibold mr-1">mmHg</span>
-            <!-- 다음 버튼 -->
             <button type="button" id="btn-next-to-pulse" class="px-2 py-1 bg-blue-500 text-white text-[11px] font-bold rounded-lg active:scale-95 transition-all">
               다음
             </button>
           </div>
         </div>
 
-        <!-- 3. 맥박수 -->
         <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-200 flex items-center justify-between px-3 focus-within:border-blue-500 focus-within:bg-blue-50/20 transition-all">
           <span class="text-xs font-bold text-slate-700">3. 맥박수</span>
           <div class="flex items-center gap-1.5">
@@ -572,22 +566,29 @@
     </div>
   </div>
 
-  <!-- 그래프 전체화면 확대 모달 (오류 원천 수정) -->
+  <!-- 그래프 전체화면 확대 모달 (식전/식후, 체중/BMI 전환 컨트롤러 추가) -->
   <div id="zoom-modal" class="fixed inset-0 bg-slate-950 z-[100] flex flex-col justify-between p-3 safe-top safe-bottom hidden">
-    <div class="flex items-center justify-between pb-2 border-b border-slate-800">
-      <div class="flex items-center gap-2">
-        <span class="w-2.5 h-2.5 rounded-full bg-blue-500"></span>
-        <h3 id="zoom-modal-title" class="text-sm font-bold text-white tracking-tight">확대 그래프</h3>
+    <div>
+      <div class="flex items-center justify-between pb-2 border-b border-slate-800">
+        <div class="flex items-center gap-2">
+          <span class="w-2.5 h-2.5 rounded-full bg-blue-500"></span>
+          <h3 id="zoom-modal-title" class="text-sm font-bold text-white tracking-tight">확대 그래프</h3>
+        </div>
+        <button type="button" onclick="closeZoomChart()" class="w-8 h-8 rounded-full bg-slate-800 text-slate-300 hover:text-white flex items-center justify-center active:scale-95 transition-all">
+          <i class="fa-solid fa-xmark text-base"></i>
+        </button>
       </div>
-      <button type="button" onclick="closeZoomChart()" class="w-8 h-8 rounded-full bg-slate-800 text-slate-300 hover:text-white flex items-center justify-center active:scale-95 transition-all">
-        <i class="fa-solid fa-xmark text-base"></i>
-      </button>
+
+      <!-- 확대 모달 내 식전/식후 및 체중/BMI 모드 전환 버튼 컨테이너 -->
+      <div id="zoom-switch-container" class="mt-2 hidden">
+        <!-- JS로 동적 생성 -->
+      </div>
     </div>
 
     <div class="grid grid-cols-4 gap-1.5 py-1.5" id="zoom-legend-container"></div>
 
     <div class="flex-1 w-full overflow-x-auto overflow-y-hidden my-auto chart-scroll-wrap flex items-center">
-      <div id="zoom-chart-box" class="h-[65vh] min-h-[280px]" style="min-width: 100%;">
+      <div id="zoom-chart-box" class="h-[60vh] min-h-[260px]" style="min-width: 100%;">
         <canvas id="zoomChart"></canvas>
       </div>
     </div>
@@ -817,7 +818,7 @@
       });
     }
 
-    // === 혈압 팝업 연속 입력 로직 개선 (2자리 스마트 이동 + 다음 버튼) ===
+    // === 혈압 팝업 연속 입력 로직 ===
     const bpModal = document.getElementById('bp-popup-modal');
     const popSys = document.getElementById('pop-bp-sys');
     const popDia = document.getElementById('pop-bp-dia');
@@ -839,11 +840,9 @@
     document.getElementById('btn-close-bp-popup').addEventListener('click', closeBpPopup);
     document.getElementById('btn-cancel-bp-popup').addEventListener('click', closeBpPopup);
 
-    // [다음] 버튼 클릭 핸들러
     document.getElementById('btn-next-to-dia').addEventListener('click', () => popDia.focus());
     document.getElementById('btn-next-to-pulse').addEventListener('click', () => popPulse.focus());
 
-    // 스마트 자동 이동: 수축기 3자리 -> 이완기
     popSys.addEventListener('input', (e) => {
       const v = e.target.value;
       if (v.length >= 3) {
@@ -851,11 +850,9 @@
       }
     });
 
-    // 스마트 자동 이동: 이완기 2자리(40~99) 또는 3자리(100 이상) 입력 시 즉시 맥박으로 이동
     popDia.addEventListener('input', (e) => {
       const v = e.target.value;
       const num = parseInt(v, 10);
-      // 2자리를 쳤는데 40 이상 99 이하인 전형적인 이완기 수치면 즉시 맥박으로 이동
       if (v.length === 2 && num >= 40 && num <= 99) {
         popPulse.focus();
       } else if (v.length >= 3) {
@@ -863,7 +860,6 @@
       }
     });
 
-    // 엔터키 키패드 액션
     popSys.addEventListener('keydown', (e) => {
       if (e.key === 'Enter') {
         e.preventDefault();
@@ -1018,66 +1014,54 @@
       btn.addEventListener('click', () => switchTab(btn.dataset.tab));
     });
 
-    // 식전 / 식후 스위치 버튼
-    document.getElementById('sugar-mode-pre').addEventListener('click', () => {
-      currentSugarMode = 'pre';
-      document.getElementById('sugar-mode-pre').className = 'py-2.5 text-xs font-bold rounded-lg transition-all bg-white text-sky-600 shadow-sm';
-      document.getElementById('sugar-mode-post').className = 'py-2.5 text-xs font-bold rounded-lg transition-all text-slate-500';
-      document.getElementById('sugar-target-badge').innerText = '정상기준 100';
-      renderSugarChart();
-      scrollToLatest();
-    });
-
-    document.getElementById('sugar-mode-post').addEventListener('click', () => {
-      currentSugarMode = 'post';
-      document.getElementById('sugar-mode-post').className = 'py-2.5 text-xs font-bold rounded-lg transition-all bg-white text-emerald-600 shadow-sm';
-      document.getElementById('sugar-mode-pre').className = 'py-2.5 text-xs font-bold rounded-lg transition-all text-slate-500';
-      document.getElementById('sugar-target-badge').innerText = '정상기준 140';
-      renderSugarChart();
-      scrollToLatest();
-    });
-
-    // 체중 / BMI 스위치 버튼
-    document.getElementById('weight-mode-kg').addEventListener('click', () => {
-      currentWeightMode = 'kg';
-      document.getElementById('weight-mode-kg').className = 'py-2.5 text-xs font-bold rounded-lg transition-all bg-white text-indigo-600 shadow-sm';
-      document.getElementById('weight-mode-bmi').className = 'py-2.5 text-xs font-bold rounded-lg transition-all text-slate-500';
-      document.getElementById('weight-chart-title').innerHTML = `<i class="fa-solid fa-weight-scale text-indigo-600"></i> 체중 변화 추이 (kg)`;
+    // 식전 / 식후 스위치 버튼 (기본 뷰)
+    function setSugarMode(mode) {
+      currentSugarMode = mode;
+      const isPre = mode === 'pre';
+      document.getElementById('sugar-mode-pre').className = `py-2.5 text-xs font-bold rounded-lg transition-all ${isPre ? 'bg-white text-sky-600 shadow-sm' : 'text-slate-500'}`;
+      document.getElementById('sugar-mode-post').className = `py-2.5 text-xs font-bold rounded-lg transition-all ${!isPre ? 'bg-white text-emerald-600 shadow-sm' : 'text-slate-500'}`;
+      document.getElementById('sugar-target-badge').innerText = isPre ? '정상기준 100' : '정상기준 140';
       
-      document.getElementById('weight-target-container').innerHTML = `
-        <span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-indigo-50 text-indigo-700 border border-indigo-200">
-          정상 BMI 18.5~22.9
-        </span>
-      `;
-      renderWeightChart();
+      renderSugarChart();
+      if (currentZoomType === 'sugar') renderZoomChart('sugar');
       scrollToLatest();
-    });
+    }
 
-    document.getElementById('weight-mode-bmi').addEventListener('click', () => {
-      if (!userHeight) {
+    document.getElementById('sugar-mode-pre').addEventListener('click', () => setSugarMode('pre'));
+    document.getElementById('sugar-mode-post').addEventListener('click', () => setSugarMode('post'));
+
+    // 체중 / BMI 스위치 버튼 (기본 뷰)
+    function setWeightMode(mode) {
+      if (mode === 'bmi' && !userHeight) {
         alert('BMI를 확인하려면 먼저 키를 설정해 주세요.');
         document.getElementById('btn-quick-height').click();
         return;
       }
-      currentWeightMode = 'bmi';
-      document.getElementById('weight-mode-bmi').className = 'py-2.5 text-xs font-bold rounded-lg transition-all bg-white text-indigo-600 shadow-sm';
-      document.getElementById('weight-mode-kg').className = 'py-2.5 text-xs font-bold rounded-lg transition-all text-slate-500';
-      document.getElementById('weight-chart-title').innerHTML = `<i class="fa-solid fa-gauge text-indigo-600"></i> BMI 지수 변화 추이`;
+      currentWeightMode = mode;
+      const isKg = mode === 'kg';
+      document.getElementById('weight-mode-kg').className = `py-2.5 text-xs font-bold rounded-lg transition-all ${isKg ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500'}`;
+      document.getElementById('weight-mode-bmi').className = `py-2.5 text-xs font-bold rounded-lg transition-all ${!isKg ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500'}`;
+      document.getElementById('weight-chart-title').innerHTML = isKg 
+        ? `<i class="fa-solid fa-weight-scale text-indigo-600"></i> 체중 변화 추이 (kg)`
+        : `<i class="fa-solid fa-gauge text-indigo-600"></i> BMI 지수 변화 추이`;
       
-      document.getElementById('weight-target-container').innerHTML = `
-        <span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200">
-          정상 ~22.9
+      document.getElementById('weight-target-container').innerHTML = isKg ? `
+        <span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-indigo-50 text-indigo-700 border border-indigo-200">
+          정상 BMI 18.5~22.9
         </span>
-        <span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-50 text-amber-700 border border-amber-200">
-          과체중 23~
-        </span>
-        <span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-rose-50 text-rose-700 border border-rose-200">
-          비만 25~
-        </span>
+      ` : `
+        <span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200">정상 ~22.9</span>
+        <span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-50 text-amber-700 border border-amber-200">과체중 23~</span>
+        <span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-rose-50 text-rose-700 border border-rose-200">비만 25~</span>
       `;
+      
       renderWeightChart();
+      if (currentZoomType === 'weight') renderZoomChart('weight');
       scrollToLatest();
-    });
+    }
+
+    document.getElementById('weight-mode-kg').addEventListener('click', () => setWeightMode('kg'));
+    document.getElementById('weight-mode-bmi').addEventListener('click', () => setWeightMode('bmi'));
 
     // 기간 필터 버튼 이벤트
     document.querySelectorAll('.range-group').forEach(group => {
@@ -1290,7 +1274,7 @@
       }
     }
 
-    // 1. 혈당 차트 데이터 빌더
+    // 1. 혈당 차트 빌더
     function buildSugarChartConfig(targetDays, isZoom = false) {
       const dates = getFilteredDates(targetDays);
       const xLabels = dates.map(d => d.slice(5));
@@ -1396,7 +1380,7 @@
       buildSquareTabLegend('sugar-legend-container', charts.sugar);
     }
 
-    // 2. 혈압 차트 데이터 빌더
+    // 2. 혈압 차트 빌더
     function buildBpChartConfig(targetDays, isZoom = false) {
       const dates = getFilteredDates(targetDays);
       const xLabels = dates.map(d => d.slice(5));
@@ -1508,7 +1492,7 @@
       buildBloodPressureSquareLegend('bp-legend-container', charts.bp);
     }
 
-    // 3. 체중 & BMI 차트 데이터 빌더
+    // 3. 체중 & BMI 차트 빌더
     function buildWeightChartConfig(targetDays, isZoom = false) {
       const dates = getFilteredDates(targetDays);
       const xLabels = dates.map(d => d.slice(5));
@@ -1657,20 +1641,67 @@
       buildSquareTabLegend('weight-legend-container', charts.weight);
     }
 
-    // === 그래프 전체화면 확대 모달 관리 (오류 원천 해결) ===
+    // === 그래프 전체화면 확대 모달 관리 (식전/식후, 체중/BMI 전환 컨트롤 연동) ===
     function openZoomChart(type) {
       currentZoomType = type;
       const modal = document.getElementById('zoom-modal');
       const titleEl = document.getElementById('zoom-modal-title');
+      const switchBox = document.getElementById('zoom-switch-container');
       
       const titles = {
         'sugar': '혈당 변화 추이 전체화면 확대',
         'bp': '혈압 추이 전체화면 확대',
-        'weight': currentWeightMode === 'kg' ? '체중 변화 추이 전체화면 확대' : 'BMI 지수 추이 전체화면 확대'
+        'weight': '체중 및 BMI 지수 전체화면 확대'
       };
       titleEl.innerText = titles[type];
-      modal.classList.remove('hidden');
 
+      // 확대 모달 내 모드 전환 스위치 렌더링
+      if (type === 'sugar') {
+        switchBox.classList.remove('hidden');
+        switchBox.innerHTML = `
+          <div class="grid grid-cols-2 gap-1 p-1 bg-slate-900 border border-slate-800 rounded-xl">
+            <button type="button" id="zoom-sugar-pre" class="py-2 text-xs font-bold rounded-lg transition-all ${currentSugarMode === 'pre' ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-400'}">
+              식전 혈당
+            </button>
+            <button type="button" id="zoom-sugar-post" class="py-2 text-xs font-bold rounded-lg transition-all ${currentSugarMode === 'post' ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-400'}">
+              식후 혈당
+            </button>
+          </div>
+        `;
+        document.getElementById('zoom-sugar-pre').addEventListener('click', () => {
+          setSugarMode('pre');
+          openZoomChart('sugar');
+        });
+        document.getElementById('zoom-sugar-post').addEventListener('click', () => {
+          setSugarMode('post');
+          openZoomChart('sugar');
+        });
+      } else if (type === 'weight') {
+        switchBox.classList.remove('hidden');
+        switchBox.innerHTML = `
+          <div class="grid grid-cols-2 gap-1 p-1 bg-slate-900 border border-slate-800 rounded-xl">
+            <button type="button" id="zoom-weight-kg" class="py-2 text-xs font-bold rounded-lg transition-all ${currentWeightMode === 'kg' ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-400'}">
+              체중 (kg)
+            </button>
+            <button type="button" id="zoom-weight-bmi" class="py-2 text-xs font-bold rounded-lg transition-all ${currentWeightMode === 'bmi' ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-400'}">
+              BMI
+            </button>
+          </div>
+        `;
+        document.getElementById('zoom-weight-kg').addEventListener('click', () => {
+          setWeightMode('kg');
+          openZoomChart('weight');
+        });
+        document.getElementById('zoom-weight-bmi').addEventListener('click', () => {
+          setWeightMode('bmi');
+          openZoomChart('weight');
+        });
+      } else {
+        switchBox.classList.add('hidden');
+        switchBox.innerHTML = '';
+      }
+
+      modal.classList.remove('hidden');
       renderZoomChart(type);
     }
 
@@ -1692,7 +1723,7 @@
 
       if (!config) return;
 
-      adjustBoxWidth('zoom-chart-box', config.datesCount, 45); // 확대 모달은 넓은 간격
+      adjustBoxWidth('zoom-chart-box', config.datesCount, 45);
 
       if (charts.zoom) charts.zoom.destroy();
 
