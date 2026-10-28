@@ -148,7 +148,7 @@
         </div>
       </div>
 
-      <!-- Blood Pressure Card (팝업 호출 버튼 추가) -->
+      <!-- Blood Pressure Card -->
       <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm space-y-3">
         <div class="flex items-center justify-between">
           <div class="flex items-center gap-1.5 text-sm font-bold text-slate-800">
@@ -511,10 +511,10 @@
     </div>
   </div>
 
-  <!-- 혈압 연속 입력 팝업 모달 (신규 추가) -->
+  <!-- 혈압 연속 입력 팝업 모달 (다음 버튼 추가 및 2자리 스마트 이동 적용) -->
   <div id="bp-popup-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
-    <div class="bg-white w-full max-w-xs rounded-2xl p-4 space-y-4 shadow-xl">
-      <div class="flex items-center justify-between pb-1 border-b border-slate-100">
+    <div class="bg-white w-full max-w-xs rounded-2xl p-4 space-y-3.5 shadow-xl">
+      <div class="flex items-center justify-between pb-1.5 border-b border-slate-100">
         <div class="flex items-center gap-1.5">
           <span class="w-2.5 h-2.5 rounded-full bg-rose-500"></span>
           <h3 class="text-sm font-bold text-slate-900">혈압 및 맥박 연속 입력</h3>
@@ -528,26 +528,34 @@
         <!-- 1. 수축기 -->
         <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-200 flex items-center justify-between px-3 focus-within:border-blue-500 focus-within:bg-blue-50/20 transition-all">
           <span class="text-xs font-bold text-slate-700">1. 수축기 (최고)</span>
-          <div class="flex items-baseline gap-1">
-            <input type="number" id="pop-bp-sys" placeholder="120" inputmode="numeric" enterkeyhint="next" class="w-16 text-right text-lg font-extrabold text-slate-900 bg-transparent focus:outline-none p-0">
-            <span class="text-xs text-slate-400 font-semibold">mmHg</span>
+          <div class="flex items-center gap-1.5">
+            <input type="number" id="pop-bp-sys" placeholder="120" inputmode="numeric" class="w-14 text-right text-lg font-extrabold text-slate-900 bg-transparent focus:outline-none p-0">
+            <span class="text-xs text-slate-400 font-semibold mr-1">mmHg</span>
+            <!-- 다음 버튼 -->
+            <button type="button" id="btn-next-to-dia" class="px-2 py-1 bg-blue-500 text-white text-[11px] font-bold rounded-lg active:scale-95 transition-all">
+              다음
+            </button>
           </div>
         </div>
 
         <!-- 2. 이완기 -->
         <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-200 flex items-center justify-between px-3 focus-within:border-blue-500 focus-within:bg-blue-50/20 transition-all">
           <span class="text-xs font-bold text-slate-700">2. 이완기 (최저)</span>
-          <div class="flex items-baseline gap-1">
-            <input type="number" id="pop-bp-dia" placeholder="80" inputmode="numeric" enterkeyhint="next" class="w-16 text-right text-lg font-extrabold text-slate-900 bg-transparent focus:outline-none p-0">
-            <span class="text-xs text-slate-400 font-semibold">mmHg</span>
+          <div class="flex items-center gap-1.5">
+            <input type="number" id="pop-bp-dia" placeholder="80" inputmode="numeric" class="w-14 text-right text-lg font-extrabold text-slate-900 bg-transparent focus:outline-none p-0">
+            <span class="text-xs text-slate-400 font-semibold mr-1">mmHg</span>
+            <!-- 다음 버튼 -->
+            <button type="button" id="btn-next-to-pulse" class="px-2 py-1 bg-blue-500 text-white text-[11px] font-bold rounded-lg active:scale-95 transition-all">
+              다음
+            </button>
           </div>
         </div>
 
         <!-- 3. 맥박수 -->
         <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-200 flex items-center justify-between px-3 focus-within:border-blue-500 focus-within:bg-blue-50/20 transition-all">
           <span class="text-xs font-bold text-slate-700">3. 맥박수</span>
-          <div class="flex items-baseline gap-1">
-            <input type="number" id="pop-pulse" placeholder="72" inputmode="numeric" enterkeyhint="done" class="w-16 text-right text-lg font-extrabold text-slate-900 bg-transparent focus:outline-none p-0">
+          <div class="flex items-center gap-1.5">
+            <input type="number" id="pop-pulse" placeholder="72" inputmode="numeric" class="w-14 text-right text-lg font-extrabold text-slate-900 bg-transparent focus:outline-none p-0">
             <span class="text-xs text-slate-400 font-semibold">bpm</span>
           </div>
         </div>
@@ -564,28 +572,28 @@
     </div>
   </div>
 
-  <!-- 그래프 전체화면 확대 모달 -->
-  <div id="zoom-modal" class="fixed inset-0 bg-slate-900/95 backdrop-blur-md z-[100] flex flex-col justify-between p-3.5 safe-top safe-bottom hidden">
+  <!-- 그래프 전체화면 확대 모달 (오류 원천 수정) -->
+  <div id="zoom-modal" class="fixed inset-0 bg-slate-950 z-[100] flex flex-col justify-between p-3 safe-top safe-bottom hidden">
     <div class="flex items-center justify-between pb-2 border-b border-slate-800">
       <div class="flex items-center gap-2">
         <span class="w-2.5 h-2.5 rounded-full bg-blue-500"></span>
-        <h3 id="zoom-modal-title" class="text-base font-bold text-white tracking-tight">확대 그래프</h3>
+        <h3 id="zoom-modal-title" class="text-sm font-bold text-white tracking-tight">확대 그래프</h3>
       </div>
       <button type="button" onclick="closeZoomChart()" class="w-8 h-8 rounded-full bg-slate-800 text-slate-300 hover:text-white flex items-center justify-center active:scale-95 transition-all">
         <i class="fa-solid fa-xmark text-base"></i>
       </button>
     </div>
 
-    <div class="grid grid-cols-4 gap-1.5 py-2" id="zoom-legend-container"></div>
+    <div class="grid grid-cols-4 gap-1.5 py-1.5" id="zoom-legend-container"></div>
 
     <div class="flex-1 w-full overflow-x-auto overflow-y-hidden my-auto chart-scroll-wrap flex items-center">
-      <div id="zoom-chart-box" class="h-[70vh] min-h-[300px]" style="min-width: 100%;">
+      <div id="zoom-chart-box" class="h-[65vh] min-h-[280px]" style="min-width: 100%;">
         <canvas id="zoomChart"></canvas>
       </div>
     </div>
 
     <div class="pt-2 border-t border-slate-800 text-center">
-      <button type="button" onclick="closeZoomChart()" class="py-2.5 px-6 rounded-xl bg-slate-800 text-slate-200 text-xs font-bold active:scale-95 transition-all">
+      <button type="button" onclick="closeZoomChart()" class="py-2 px-6 rounded-xl bg-slate-800 text-slate-200 text-xs font-bold active:scale-95 transition-all">
         닫기
       </button>
     </div>
@@ -809,7 +817,7 @@
       });
     }
 
-    // === 혈압 팝업 연속 입력 로직 ===
+    // === 혈압 팝업 연속 입력 로직 개선 (2자리 스마트 이동 + 다음 버튼) ===
     const bpModal = document.getElementById('bp-popup-modal');
     const popSys = document.getElementById('pop-bp-sys');
     const popDia = document.getElementById('pop-bp-dia');
@@ -820,7 +828,7 @@
       popDia.value = document.getElementById('bp-dia').value;
       popPulse.value = document.getElementById('pulse').value;
       bpModal.classList.remove('hidden');
-      setTimeout(() => popSys.focus(), 50);
+      setTimeout(() => popSys.focus(), 60);
     }
 
     function closeBpPopup() {
@@ -831,20 +839,31 @@
     document.getElementById('btn-close-bp-popup').addEventListener('click', closeBpPopup);
     document.getElementById('btn-cancel-bp-popup').addEventListener('click', closeBpPopup);
 
-    // 자동 다음 칸 이동 (수축기 3자리 -> 이완기 / 이완기 2~3자리 -> 맥박)
+    // [다음] 버튼 클릭 핸들러
+    document.getElementById('btn-next-to-dia').addEventListener('click', () => popDia.focus());
+    document.getElementById('btn-next-to-pulse').addEventListener('click', () => popPulse.focus());
+
+    // 스마트 자동 이동: 수축기 3자리 -> 이완기
     popSys.addEventListener('input', (e) => {
-      if (e.target.value.length >= 3) {
+      const v = e.target.value;
+      if (v.length >= 3) {
         popDia.focus();
       }
     });
 
+    // 스마트 자동 이동: 이완기 2자리(40~99) 또는 3자리(100 이상) 입력 시 즉시 맥박으로 이동
     popDia.addEventListener('input', (e) => {
-      if (e.target.value.length >= 3) {
+      const v = e.target.value;
+      const num = parseInt(v, 10);
+      // 2자리를 쳤는데 40 이상 99 이하인 전형적인 이완기 수치면 즉시 맥박으로 이동
+      if (v.length === 2 && num >= 40 && num <= 99) {
+        popPulse.focus();
+      } else if (v.length >= 3) {
         popPulse.focus();
       }
     });
 
-    // 엔터키 / 다음 버튼 액션
+    // 엔터키 키패드 액션
     popSys.addEventListener('keydown', (e) => {
       if (e.key === 'Enter') {
         e.preventDefault();
@@ -1271,13 +1290,12 @@
       }
     }
 
-    // 1. 혈당 차트
-    function renderSugarChart() {
-      const dates = getFilteredDates(selectedRanges.sugar);
+    // 1. 혈당 차트 데이터 빌더
+    function buildSugarChartConfig(targetDays, isZoom = false) {
+      const dates = getFilteredDates(targetDays);
       const xLabels = dates.map(d => d.slice(5));
-      adjustBoxWidth('sugar-chart-box', dates.length, 24);
-
       const allValues = [];
+
       const getSugarData = (timing, type) => {
         return dates.map(date => {
           const found = records.find(r => r.date === date && r.timing === timing);
@@ -1328,15 +1346,13 @@
         });
       }
 
-      if (charts.sugar) charts.sugar.destroy();
-      charts.sugar = new Chart(document.getElementById('sugarChart'), {
-        type: 'line',
+      return {
         data: { labels: xLabels, datasets },
         options: {
           responsive: true,
           maintainAspectRatio: false,
           spanGaps: true,
-          layout: { padding: { top: 25, bottom: 2, left: 4, right: 6 } },
+          layout: { padding: isZoom ? { top: 35, bottom: 10, left: 10, right: 20 } : { top: 25, bottom: 2, left: 4, right: 6 } },
           plugins: {
             legend: { display: false },
             tooltip: { callbacks: { title: (items) => `${dates[items[0].dataIndex]}` } },
@@ -1344,27 +1360,48 @@
           },
           scales: {
             x: { 
-              ticks: { font: { size: 10, weight: '700' }, maxRotation: 45 },
+              ticks: { 
+                font: { size: 10, weight: '700' }, 
+                maxRotation: 45,
+                color: isZoom ? '#94a3b8' : '#64748b'
+              },
+              grid: { color: isZoom ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)' },
               offset: false 
             },
             y: { 
               suggestedMin: dynamicMin,
               suggestedMax: dynamicMax,
-              ticks: { font: { size: 11, weight: '700' } } 
+              ticks: { 
+                font: { size: 11, weight: '700' },
+                color: isZoom ? '#94a3b8' : '#64748b'
+              },
+              grid: { color: isZoom ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)' }
             }
           }
-        }
+        },
+        datesCount: dates.length
+      };
+    }
+
+    function renderSugarChart() {
+      const config = buildSugarChartConfig(selectedRanges.sugar, false);
+      adjustBoxWidth('sugar-chart-box', config.datesCount, 24);
+
+      if (charts.sugar) charts.sugar.destroy();
+      charts.sugar = new Chart(document.getElementById('sugarChart'), {
+        type: 'line',
+        data: config.data,
+        options: config.options
       });
       buildSquareTabLegend('sugar-legend-container', charts.sugar);
     }
 
-    // 2. 혈압 차트
-    function renderBpChart() {
-      const dates = getFilteredDates(selectedRanges.bp);
+    // 2. 혈압 차트 데이터 빌더
+    function buildBpChartConfig(targetDays, isZoom = false) {
+      const dates = getFilteredDates(targetDays);
       const xLabels = dates.map(d => d.slice(5));
-      adjustBoxWidth('bp-chart-box', dates.length, 24);
-
       const allValues = [];
+
       const getFieldData = (timing, field) => {
         return dates.map(date => {
           const found = records.find(r => r.date === date && r.timing === timing);
@@ -1421,15 +1458,13 @@
         );
       }
 
-      if (charts.bp) charts.bp.destroy();
-      charts.bp = new Chart(document.getElementById('bpChart'), {
-        type: 'line',
+      return {
         data: { labels: xLabels, datasets },
         options: {
           responsive: true,
           maintainAspectRatio: false,
           spanGaps: true,
-          layout: { padding: { top: 25, bottom: 2, left: 4, right: 6 } },
+          layout: { padding: isZoom ? { top: 35, bottom: 10, left: 10, right: 20 } : { top: 25, bottom: 2, left: 4, right: 6 } },
           plugins: {
             legend: { display: false },
             tooltip: { callbacks: { title: (items) => `${dates[items[0].dataIndex]}` } },
@@ -1437,27 +1472,48 @@
           },
           scales: {
             x: { 
-              ticks: { font: { size: 10, weight: '700' }, maxRotation: 45 },
+              ticks: { 
+                font: { size: 10, weight: '700' }, 
+                maxRotation: 45,
+                color: isZoom ? '#94a3b8' : '#64748b'
+              },
+              grid: { color: isZoom ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)' },
               offset: false 
             },
             y: { 
               suggestedMin: dynamicMin,
               suggestedMax: dynamicMax,
-              ticks: { font: { size: 11, weight: '700' } } 
+              ticks: { 
+                font: { size: 11, weight: '700' },
+                color: isZoom ? '#94a3b8' : '#64748b'
+              },
+              grid: { color: isZoom ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)' }
             }
           }
-        }
+        },
+        datesCount: dates.length
+      };
+    }
+
+    function renderBpChart() {
+      const config = buildBpChartConfig(selectedRanges.bp, false);
+      adjustBoxWidth('bp-chart-box', config.datesCount, 24);
+
+      if (charts.bp) charts.bp.destroy();
+      charts.bp = new Chart(document.getElementById('bpChart'), {
+        type: 'line',
+        data: config.data,
+        options: config.options
       });
       buildBloodPressureSquareLegend('bp-legend-container', charts.bp);
     }
 
-    // 3. 체중 & BMI 차트
-    function renderWeightChart() {
-      const dates = getFilteredDates(selectedRanges.weight);
+    // 3. 체중 & BMI 차트 데이터 빌더
+    function buildWeightChartConfig(targetDays, isZoom = false) {
+      const dates = getFilteredDates(targetDays);
       const xLabels = dates.map(d => d.slice(5));
-      adjustBoxWidth('weight-chart-box', dates.length, 24);
-
       const realDataValues = [];
+
       const getVal = (timing) => {
         return dates.map(date => {
           const found = records.find(r => r.date === date && r.timing === timing);
@@ -1549,15 +1605,13 @@
         }
       }
 
-      if (charts.weight) charts.weight.destroy();
-      charts.weight = new Chart(document.getElementById('weightChart'), {
-        type: 'line',
+      return {
         data: { labels: xLabels, datasets },
         options: {
           responsive: true,
           maintainAspectRatio: false,
           spanGaps: true,
-          layout: { padding: { top: 25, bottom: 2, left: 4, right: 6 } },
+          layout: { padding: isZoom ? { top: 35, bottom: 10, left: 10, right: 20 } : { top: 25, bottom: 2, left: 4, right: 6 } },
           plugins: {
             legend: { display: false },
             tooltip: { callbacks: { title: (items) => `${dates[items[0].dataIndex]}` } },
@@ -1565,7 +1619,12 @@
           },
           scales: {
             x: { 
-              ticks: { font: { size: 10, weight: '700' }, maxRotation: 45 },
+              ticks: { 
+                font: { size: 10, weight: '700' }, 
+                maxRotation: 45,
+                color: isZoom ? '#94a3b8' : '#64748b'
+              },
+              grid: { color: isZoom ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)' },
               offset: false 
             },
             y: {
@@ -1574,16 +1633,31 @@
               ticks: {
                 stepSize: yStep,
                 font: { size: 11, weight: '700' },
+                color: isZoom ? '#94a3b8' : '#64748b',
                 callback: (val) => currentWeightMode === 'bmi' ? Number(val).toFixed(1) : val
-              }
+              },
+              grid: { color: isZoom ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)' }
             }
           }
-        }
+        },
+        datesCount: dates.length
+      };
+    }
+
+    function renderWeightChart() {
+      const config = buildWeightChartConfig(selectedRanges.weight, false);
+      adjustBoxWidth('weight-chart-box', config.datesCount, 24);
+
+      if (charts.weight) charts.weight.destroy();
+      charts.weight = new Chart(document.getElementById('weightChart'), {
+        type: 'line',
+        data: config.data,
+        options: config.options
       });
       buildSquareTabLegend('weight-legend-container', charts.weight);
     }
 
-    // === 그래프 전체화면 확대 모달 관리 ===
+    // === 그래프 전체화면 확대 모달 관리 (오류 원천 해결) ===
     function openZoomChart(type) {
       currentZoomType = type;
       const modal = document.getElementById('zoom-modal');
@@ -1611,27 +1685,21 @@
     }
 
     function renderZoomChart(type) {
-      const sourceChart = charts[type];
-      if (!sourceChart) return;
+      let config = null;
+      if (type === 'sugar') config = buildSugarChartConfig(selectedRanges.sugar, true);
+      else if (type === 'bp') config = buildBpChartConfig(selectedRanges.bp, true);
+      else if (type === 'weight') config = buildWeightChartConfig(selectedRanges.weight, true);
 
-      const dates = getFilteredDates(selectedRanges[type]);
-      adjustBoxWidth('zoom-chart-box', dates.length, 45);
+      if (!config) return;
+
+      adjustBoxWidth('zoom-chart-box', config.datesCount, 45); // 확대 모달은 넓은 간격
 
       if (charts.zoom) charts.zoom.destroy();
 
-      const zoomData = JSON.parse(JSON.stringify(sourceChart.data));
-      const zoomOptions = JSON.parse(JSON.stringify(sourceChart.options));
-      
-      zoomOptions.layout = { padding: { top: 35, bottom: 10, left: 10, right: 20 } };
-      zoomOptions.scales.x.ticks.color = '#94a3b8';
-      zoomOptions.scales.y.ticks.color = '#94a3b8';
-      zoomOptions.scales.x.grid = { color: 'rgba(255, 255, 255, 0.08)' };
-      zoomOptions.scales.y.grid = { color: 'rgba(255, 255, 255, 0.08)' };
-
       charts.zoom = new Chart(document.getElementById('zoomChart'), {
         type: 'line',
-        data: zoomData,
-        options: zoomOptions
+        data: config.data,
+        options: config.options
       });
 
       if (type === 'bp') {
@@ -1643,7 +1711,7 @@
       setTimeout(() => {
         const wrap = document.querySelector('#zoom-modal .chart-scroll-wrap');
         if (wrap) wrap.scrollLeft = wrap.scrollWidth;
-      }, 50);
+      }, 60);
     }
 
     function renderCharts() {
