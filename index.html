@@ -9,7 +9,6 @@
   <meta name="theme-color" content="#ffffff">
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <!-- 차트 위 수치 상시 표기를 위한 플러그인 -->
   <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
@@ -208,7 +207,7 @@
       </button>
     </section>
 
-    <!-- TAB 2: Charts (네모 포인트 + 수치 상시 표기) -->
+    <!-- TAB 2: Charts (상하/좌우 여백 확대로 숫자 잘림 완벽 방지) -->
     <section id="tab-charts" class="space-y-4 hidden">
       
       <!-- 1. 혈당 차트 -->
@@ -231,7 +230,8 @@
 
         <div class="grid grid-cols-4 gap-1.5" id="sugar-legend-container"></div>
         
-        <div class="h-52 pt-2">
+        <!-- 높이 h-60 확보 -->
+        <div class="h-60 pt-2">
           <canvas id="sugarChart"></canvas>
         </div>
       </div>
@@ -245,7 +245,8 @@
           <span class="text-[10px] text-slate-400">버튼 터치로 On/Off</span>
         </div>
         <div class="grid grid-cols-4 gap-1.5" id="bp-legend-container"></div>
-        <div class="h-52 pt-2">
+        <!-- 높이 h-60 확보 -->
+        <div class="h-60 pt-2">
           <canvas id="bpChart"></canvas>
         </div>
       </div>
@@ -259,7 +260,8 @@
           <span class="text-[10px] text-slate-400">버튼 터치로 On/Off</span>
         </div>
         <div class="grid grid-cols-4 gap-1.5" id="weight-legend-container"></div>
-        <div class="h-48 pt-2">
+        <!-- 높이 h-56 확보 -->
+        <div class="h-56 pt-2">
           <canvas id="weightChart"></canvas>
         </div>
       </div>
@@ -350,7 +352,6 @@
   </div>
 
   <script>
-    // Datalabels 플러그인 전역 등록
     Chart.register(ChartDataLabels);
 
     let records = JSON.parse(localStorage.getItem('health_records') || '[]');
@@ -671,7 +672,7 @@
       });
     }
 
-    // 1. 혈당 차트 렌더링 (네모 포인트 + 수치 표기)
+    // 1. 혈당 단독 렌더링
     function renderSugarChart() {
       const sorted = [...records].reverse();
       const uniqueDates = Array.from(new Set(sorted.map(r => r.date)));
@@ -695,31 +696,35 @@
         data: {
           labels: xLabels,
           datasets: [
-            { label: '아침', data: getSugarData('아침', currentSugarMode), borderColor: '#0284c7', backgroundColor: '#0284c7', tension: 0.3, pointStyle: 'rectRounded', pointRadius: 6, pointHoverRadius: 8 },
-            { label: '점심', data: getSugarData('점심', currentSugarMode), borderColor: '#16a34a', backgroundColor: '#16a34a', tension: 0.3, pointStyle: 'rectRounded', pointRadius: 6, pointHoverRadius: 8 },
-            { label: '저녁', data: getSugarData('저녁', currentSugarMode), borderColor: '#e11d48', backgroundColor: '#e11d48', tension: 0.3, pointStyle: 'rectRounded', pointRadius: 6, pointHoverRadius: 8 },
-            { label: '취침전', data: getSugarData('취침전', currentSugarMode), borderColor: '#7c3aed', backgroundColor: '#7c3aed', tension: 0.3, pointStyle: 'rectRounded', pointRadius: 6, pointHoverRadius: 8 }
+            { label: '아침', data: getSugarData('아침', currentSugarMode), borderColor: '#0284c7', backgroundColor: '#0284c7', tension: 0.3, pointStyle: 'rectRounded', pointRadius: 5.5, pointHoverRadius: 7.5 },
+            { label: '점심', data: getSugarData('점심', currentSugarMode), borderColor: '#16a34a', backgroundColor: '#16a34a', tension: 0.3, pointStyle: 'rectRounded', pointRadius: 5.5, pointHoverRadius: 7.5 },
+            { label: '저녁', data: getSugarData('저녁', currentSugarMode), borderColor: '#e11d48', backgroundColor: '#e11d48', tension: 0.3, pointStyle: 'rectRounded', pointRadius: 5.5, pointHoverRadius: 7.5 },
+            { label: '취침전', data: getSugarData('취침전', currentSugarMode), borderColor: '#7c3aed', backgroundColor: '#7c3aed', tension: 0.3, pointStyle: 'rectRounded', pointRadius: 5.5, pointHoverRadius: 7.5 }
           ]
         },
         options: {
           responsive: true,
           maintainAspectRatio: false,
           spanGaps: true,
+          layout: {
+            padding: { top: 25, bottom: 5, left: 5, right: 10 }
+          },
           plugins: {
             legend: { display: false },
             tooltip: { callbacks: { title: (items) => `${uniqueDates[items[0].dataIndex]}` } },
             datalabels: {
               align: 'top',
               anchor: 'end',
-              offset: 2,
+              offset: 3,
               font: { size: 9, weight: 'bold' },
               color: (ctx) => ctx.dataset.borderColor,
-              formatter: (value) => value !== null ? value : ''
+              formatter: (value) => value !== null ? value : '',
+              clip: false
             }
           },
           scales: {
             x: { ticks: { font: { size: 10 }, maxRotation: 45 } },
-            y: { ticks: { font: { size: 10 } }, grace: '8%' }
+            y: { ticks: { font: { size: 10 } }, grace: '18%' }
           }
         }
       });
@@ -743,40 +748,44 @@
         responsive: true,
         maintainAspectRatio: false,
         spanGaps: true,
+        layout: {
+          padding: { top: 25, bottom: 5, left: 5, right: 10 }
+        },
         plugins: {
           legend: { display: false },
           tooltip: { callbacks: { title: (items) => `${uniqueDates[items[0].dataIndex]}` } },
           datalabels: {
             align: 'top',
             anchor: 'end',
-            offset: 2,
+            offset: 3,
             font: { size: 9, weight: 'bold' },
             color: (ctx) => ctx.dataset.borderColor,
-            formatter: (value) => value !== null ? value : ''
+            formatter: (value) => value !== null ? value : '',
+            clip: false
           }
         },
         scales: {
           x: { ticks: { font: { size: 10 }, maxRotation: 45 } },
-          y: { ticks: { font: { size: 10 } }, grace: '8%' }
+          y: { ticks: { font: { size: 10 } }, grace: '18%' }
         }
       };
 
       renderSugarChart();
 
-      // 2. 혈압 차트 (네모 포인트 + 수치 표기)
+      // 2. 혈압
       if (charts.bp) charts.bp.destroy();
       charts.bp = new Chart(document.getElementById('bpChart'), {
         type: 'line',
         data: {
           labels: xLabels,
           datasets: [
-            { label: '아침 수축기', data: getFieldData('아침', 'bpSys'), borderColor: '#0284c7', backgroundColor: '#0284c7', tension: 0.3, pointStyle: 'rectRounded', pointRadius: 6, pointHoverRadius: 8 },
+            { label: '아침 수축기', data: getFieldData('아침', 'bpSys'), borderColor: '#0284c7', backgroundColor: '#0284c7', tension: 0.3, pointStyle: 'rectRounded', pointRadius: 5.5, pointHoverRadius: 7.5 },
             { label: '아침 이완기', data: getFieldData('아침', 'bpDia'), borderColor: '#0284c7', borderDash: [4, 4], backgroundColor: '#0284c7', tension: 0.3, pointStyle: 'rectRounded', pointRadius: 5, pointHoverRadius: 7 },
-            { label: '점심 수축기', data: getFieldData('점심', 'bpSys'), borderColor: '#16a34a', backgroundColor: '#16a34a', tension: 0.3, pointStyle: 'rectRounded', pointRadius: 6, pointHoverRadius: 8 },
+            { label: '점심 수축기', data: getFieldData('점심', 'bpSys'), borderColor: '#16a34a', backgroundColor: '#16a34a', tension: 0.3, pointStyle: 'rectRounded', pointRadius: 5.5, pointHoverRadius: 7.5 },
             { label: '점심 이완기', data: getFieldData('점심', 'bpDia'), borderColor: '#16a34a', borderDash: [4, 4], backgroundColor: '#16a34a', tension: 0.3, pointStyle: 'rectRounded', pointRadius: 5, pointHoverRadius: 7 },
-            { label: '저녁 수축기', data: getFieldData('저녁', 'bpSys'), borderColor: '#e11d48', backgroundColor: '#e11d48', tension: 0.3, pointStyle: 'rectRounded', pointRadius: 6, pointHoverRadius: 8 },
+            { label: '저녁 수축기', data: getFieldData('저녁', 'bpSys'), borderColor: '#e11d48', backgroundColor: '#e11d48', tension: 0.3, pointStyle: 'rectRounded', pointRadius: 5.5, pointHoverRadius: 7.5 },
             { label: '저녁 이완기', data: getFieldData('저녁', 'bpDia'), borderColor: '#e11d48', borderDash: [4, 4], backgroundColor: '#e11d48', tension: 0.3, pointStyle: 'rectRounded', pointRadius: 5, pointHoverRadius: 7 },
-            { label: '취침전 수축기', data: getFieldData('취침전', 'bpSys'), borderColor: '#7c3aed', backgroundColor: '#7c3aed', tension: 0.3, pointStyle: 'rectRounded', pointRadius: 6, pointHoverRadius: 8 },
+            { label: '취침전 수축기', data: getFieldData('취침전', 'bpSys'), borderColor: '#7c3aed', backgroundColor: '#7c3aed', tension: 0.3, pointStyle: 'rectRounded', pointRadius: 5.5, pointHoverRadius: 7.5 },
             { label: '취침전 이완기', data: getFieldData('취침전', 'bpDia'), borderColor: '#7c3aed', borderDash: [4, 4], backgroundColor: '#7c3aed', tension: 0.3, pointStyle: 'rectRounded', pointRadius: 5, pointHoverRadius: 7 }
           ]
         },
@@ -784,17 +793,17 @@
       });
       buildBloodPressureSquareLegend('bp-legend-container', charts.bp);
 
-      // 3. 체중 차트 (네모 포인트 + 수치 표기)
+      // 3. 체중
       if (charts.weight) charts.weight.destroy();
       charts.weight = new Chart(document.getElementById('weightChart'), {
         type: 'line',
         data: {
           labels: xLabels,
           datasets: [
-            { label: '아침', data: getFieldData('아침', 'weight'), borderColor: '#0284c7', backgroundColor: '#0284c7', tension: 0.3, pointStyle: 'rectRounded', pointRadius: 6, pointHoverRadius: 8 },
-            { label: '점심', data: getFieldData('점심', 'weight'), borderColor: '#16a34a', backgroundColor: '#16a34a', tension: 0.3, pointStyle: 'rectRounded', pointRadius: 6, pointHoverRadius: 8 },
-            { label: '저녁', data: getFieldData('저녁', 'weight'), borderColor: '#e11d48', backgroundColor: '#e11d48', tension: 0.3, pointStyle: 'rectRounded', pointRadius: 6, pointHoverRadius: 8 },
-            { label: '취침전', data: getFieldData('취침전', 'weight'), borderColor: '#7c3aed', backgroundColor: '#7c3aed', tension: 0.3, pointStyle: 'rectRounded', pointRadius: 6, pointHoverRadius: 8 }
+            { label: '아침', data: getFieldData('아침', 'weight'), borderColor: '#0284c7', backgroundColor: '#0284c7', tension: 0.3, pointStyle: 'rectRounded', pointRadius: 5.5, pointHoverRadius: 7.5 },
+            { label: '점심', data: getFieldData('점심', 'weight'), borderColor: '#16a34a', backgroundColor: '#16a34a', tension: 0.3, pointStyle: 'rectRounded', pointRadius: 5.5, pointHoverRadius: 7.5 },
+            { label: '저녁', data: getFieldData('저녁', 'weight'), borderColor: '#e11d48', backgroundColor: '#e11d48', tension: 0.3, pointStyle: 'rectRounded', pointRadius: 5.5, pointHoverRadius: 7.5 },
+            { label: '취침전', data: getFieldData('취침전', 'weight'), borderColor: '#7c3aed', backgroundColor: '#7c3aed', tension: 0.3, pointStyle: 'rectRounded', pointRadius: 5.5, pointHoverRadius: 7.5 }
           ]
         },
         options: baseOptions
