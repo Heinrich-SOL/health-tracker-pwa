@@ -345,14 +345,13 @@
         </div>
       </div>
 
-      <!-- 3. 체중 & BMI 차트 (BMI 가이드라인 줄바꿈 배치로 제목 줄밀림 완전 차단) -->
+      <!-- 3. 체중 & BMI 차트 -->
       <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm space-y-2.5">
         <div>
           <h2 class="text-sm font-bold text-slate-800 flex items-center gap-1.5" id="weight-chart-title">
             <i class="fa-solid fa-weight-scale text-indigo-600"></i> 체중 변화 추이 (kg)
           </h2>
           
-          <!-- 한 줄 아래로 내려 터치 안내와 가이드라인 뱃지를 깔끔하게 정돈 -->
           <div class="flex items-center justify-between mt-1">
             <span class="text-[11px] text-slate-400">시간대별 터치로 켜고 끄기</span>
             <div id="weight-target-container" class="flex items-center gap-1">
@@ -512,6 +511,15 @@
       bp: 0,
       weight: 0
     };
+
+    // 기록을 날짜(YYYY-MM-DD)와 시간(HH:mm) 기준으로 항상 최신순(내림차순) 정렬하는 핵심 함수
+    function sortRecordsChronologically() {
+      records.sort((a, b) => {
+        const timeA = `${a.date} ${a.time || '00:00'}`;
+        const timeB = `${b.date} ${b.time || '00:00'}`;
+        return timeB.localeCompare(timeA);
+      });
+    }
 
     const timingColors = {
       '아침': { 
@@ -687,7 +695,7 @@
       });
     }
 
-    // 저장 & 수정
+    // 저장 & 수정 시 항상 날짜/시간 순서로 자동 정렬
     document.getElementById('save-btn').addEventListener('click', () => {
       const date = document.getElementById('input-date').value;
       const time = document.getElementById('input-time').value;
@@ -723,6 +731,7 @@
             bmi: bmiData ? bmiData.bmi : null,
             memo: memo || null
           };
+          sortRecordsChronologically(); // 정렬 실행
           localStorage.setItem('health_records', JSON.stringify(records));
           alert('기록이 성공적으로 수정되었습니다.');
         }
@@ -742,7 +751,8 @@
           memo: memo || null
         };
 
-        records.unshift(item);
+        records.push(item);
+        sortRecordsChronologically(); // 과거 날짜를 입력해도 최신순 자동 정렬
         localStorage.setItem('health_records', JSON.stringify(records));
         alert('성공적으로 기록되었습니다.');
         resetFormFields();
@@ -814,14 +824,13 @@
       renderSugarChart();
     });
 
-    // 체중 / BMI 스위치 버튼 (가이드라인 뱃지 동적 전환)
+    // 체중 / BMI 스위치 버튼
     document.getElementById('weight-mode-kg').addEventListener('click', () => {
       currentWeightMode = 'kg';
       document.getElementById('weight-mode-kg').className = 'py-2.5 text-xs font-bold rounded-lg transition-all bg-white text-indigo-600 shadow-sm';
       document.getElementById('weight-mode-bmi').className = 'py-2.5 text-xs font-bold rounded-lg transition-all text-slate-500';
       document.getElementById('weight-chart-title').innerHTML = `<i class="fa-solid fa-weight-scale text-indigo-600"></i> 체중 변화 추이 (kg)`;
       
-      // 체중 모드 가이드라인 뱃지
       document.getElementById('weight-target-container').innerHTML = `
         <span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-indigo-50 text-indigo-700 border border-indigo-200">
           정상 BMI 18.5~22.9
@@ -841,7 +850,6 @@
       document.getElementById('weight-mode-kg').className = 'py-2.5 text-xs font-bold rounded-lg transition-all text-slate-500';
       document.getElementById('weight-chart-title').innerHTML = `<i class="fa-solid fa-gauge text-indigo-600"></i> BMI 지수 변화 추이`;
       
-      // BMI 모드 가이드라인: 줄밀림 없이 콤팩트한 뱃지들로 분리 표시
       document.getElementById('weight-target-container').innerHTML = `
         <span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200">
           정상 ~22.9
@@ -1047,13 +1055,13 @@
       }
     };
 
+    // 차트 X축용 날짜 추출 (과거 -> 최신 오름차순 정렬)
     function getFilteredDates(days) {
-      const sorted = [...records].reverse();
-      const uniqueDates = Array.from(new Set(sorted.map(r => r.date)));
-      if (days > 0 && uniqueDates.length > days) {
-        return uniqueDates.slice(-days);
+      const dates = Array.from(new Set(records.map(r => r.date))).sort();
+      if (days > 0 && dates.length > days) {
+        return dates.slice(-days);
       }
-      return uniqueDates;
+      return dates;
     }
 
     function adjustBoxWidth(boxId, count) {
@@ -1070,7 +1078,6 @@
 
     // 1. 혈당 차트
     function renderSugarChart() {
-      const sorted = [...records].reverse();
       const dates = getFilteredDates(selectedRanges.sugar);
       const xLabels = dates.map(d => d.slice(5));
       adjustBoxWidth('sugar-chart-box', dates.length);
@@ -1078,7 +1085,7 @@
       const allValues = [];
       const getSugarData = (timing, type) => {
         return dates.map(date => {
-          const found = sorted.find(r => r.date === date && r.timing === timing);
+          const found = records.find(r => r.date === date && r.timing === timing);
           if (!found) return null;
           let val = null;
           if (type === 'pre') {
@@ -1155,7 +1162,6 @@
 
     // 2. 혈압 차트
     function renderBpChart() {
-      const sorted = [...records].reverse();
       const dates = getFilteredDates(selectedRanges.bp);
       const xLabels = dates.map(d => d.slice(5));
       adjustBoxWidth('bp-chart-box', dates.length);
@@ -1163,7 +1169,7 @@
       const allValues = [];
       const getFieldData = (timing, field) => {
         return dates.map(date => {
-          const found = sorted.find(r => r.date === date && r.timing === timing);
+          const found = records.find(r => r.date === date && r.timing === timing);
           if (!found || found[field] === null) return null;
           allValues.push(found[field]);
           return found[field];
@@ -1246,7 +1252,6 @@
 
     // 3. 체중 & BMI 차트
     function renderWeightChart() {
-      const sorted = [...records].reverse();
       const dates = getFilteredDates(selectedRanges.weight);
       const xLabels = dates.map(d => d.slice(5));
       adjustBoxWidth('weight-chart-box', dates.length);
@@ -1254,7 +1259,7 @@
       const realDataValues = [];
       const getVal = (timing) => {
         return dates.map(date => {
-          const found = sorted.find(r => r.date === date && r.timing === timing);
+          const found = records.find(r => r.date === date && r.timing === timing);
           if (!found || found.weight === null) return null;
           let val = null;
           if (currentWeightMode === 'kg') {
@@ -1429,7 +1434,7 @@
       alert('데이터가 복사되었습니다!');
     }
 
-    // 파일 복원
+    // 파일 복원 시에도 날짜/시간 순서 정렬
     document.getElementById('restore-file').addEventListener('change', (e) => {
       const file = e.target.files[0];
       if (!file) return;
@@ -1461,6 +1466,7 @@
         const parsed = JSON.parse(jsonString);
         if (Array.isArray(parsed)) {
           records = parsed;
+          sortRecordsChronologically(); // 복원된 데이터 정렬
           localStorage.setItem('health_records', JSON.stringify(records));
           alert(`성공적으로 ${records.length}건의 기록이 복원되었습니다.`);
           renderHistory();
@@ -1486,6 +1492,7 @@
       }
     });
 
+    sortRecordsChronologically(); // 시작 시 기존 데이터 정렬
     initHeaderDate();
     setTiming(getNowTiming());
     updateUserHeightDisplay();
