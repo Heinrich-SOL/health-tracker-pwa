@@ -68,11 +68,11 @@
 
         <div class="grid grid-cols-4 gap-1.5">
           <button type="button" class="timing-btn flex flex-col items-center justify-center py-2 rounded-xl border border-slate-200 text-slate-600 transition-all" data-timing="아침">
-            <i class="fa-solid fa-sun text-amber-500 text-xs mb-0.5"></i>
+            <i class="fa-solid fa-sun text-sky-500 text-xs mb-0.5"></i>
             <span class="text-[11px] font-bold">아침</span>
           </button>
           <button type="button" class="timing-btn flex flex-col items-center justify-center py-2 rounded-xl border border-slate-200 text-slate-600 transition-all" data-timing="점심">
-            <i class="fa-solid fa-cloud-sun text-orange-400 text-xs mb-0.5"></i>
+            <i class="fa-solid fa-cloud-sun text-emerald-500 text-xs mb-0.5"></i>
             <span class="text-[11px] font-bold">점심</span>
           </button>
           <button type="button" class="timing-btn flex flex-col items-center justify-center py-2 rounded-xl border border-slate-200 text-slate-600 transition-all" data-timing="저녁">
@@ -176,37 +176,36 @@
       </button>
     </section>
 
-    <!-- TAB 2: Charts (아침/점심/저녁 다중 라인 표기) -->
+    <!-- TAB 2: Charts -->
     <section id="tab-charts" class="space-y-3.5 hidden">
-      <!-- 안내 문구 -->
       <div class="px-1 text-[11px] text-slate-400">
-        * 상단 범례(아침/점심/저녁)를 누르면 해당 선만 켜고 끌 수 있습니다.
+        * 상단 범례(아침/점심/저녁)를 누르면 특정 선만 켜고 끌 수 있습니다.
       </div>
 
-      <!-- 혈당 차트 (아침/점심/저녁 시간대별 곡선) -->
+      <!-- 혈당 차트 -->
       <div class="bg-white p-3.5 rounded-2xl border border-slate-200 shadow-sm">
         <h2 class="text-xs font-bold text-slate-700 mb-2.5 flex items-center gap-1.5">
-          <i class="fa-solid fa-chart-line text-emerald-500"></i> 시간대별 혈당 변화 (mg/dL)
+          <i class="fa-solid fa-chart-line text-emerald-600"></i> 시간대별 혈당 변화 (mg/dL)
         </h2>
         <div class="h-52">
           <canvas id="sugarChart"></canvas>
         </div>
       </div>
 
-      <!-- 혈압 차트 (시간대별 수축기 추이) -->
+      <!-- 혈압 차트 -->
       <div class="bg-white p-3.5 rounded-2xl border border-slate-200 shadow-sm">
         <h2 class="text-xs font-bold text-slate-700 mb-2.5 flex items-center gap-1.5">
-          <i class="fa-solid fa-heart-pulse text-rose-500"></i> 시간대별 수축기 혈압 (mmHg)
+          <i class="fa-solid fa-heart-pulse text-rose-600"></i> 시간대별 수축기 혈압 (mmHg)
         </h2>
         <div class="h-52">
           <canvas id="bpChart"></canvas>
         </div>
       </div>
 
-      <!-- 체중 차트 (시간대별 체중 추이) -->
+      <!-- 체중 차트 -->
       <div class="bg-white p-3.5 rounded-2xl border border-slate-200 shadow-sm">
         <h2 class="text-xs font-bold text-slate-700 mb-2.5 flex items-center gap-1.5">
-          <i class="fa-solid fa-weight-scale text-indigo-500"></i> 체중 변화 추이 (kg)
+          <i class="fa-solid fa-weight-scale text-indigo-600"></i> 체중 변화 추이 (kg)
         </h2>
         <div class="h-44">
           <canvas id="weightChart"></canvas>
@@ -229,7 +228,7 @@
         <h2 class="text-xs font-bold text-slate-700 flex items-center gap-1.5">
           <i class="fa-solid fa-shield-halved text-blue-600"></i> 데이터 백업
         </h2>
-        <p class="text-[11px] text-slate-400 leading-relaxed">아이폰에서는 공유창(카톡, 파일 앱)으로 백업하거나 텍스트를 복사해 둘 수 있습니다.</p>
+        <p class="text-[11px] text-slate-400 leading-relaxed">아이폰에서는 파일 앱 저장/카톡 공유를 하거나, 텍스트를 복사해 둘 수 있습니다.</p>
         <div class="grid grid-cols-2 gap-2 pt-1">
           <button id="backup-share-btn" class="py-2.5 px-2 bg-blue-50 text-blue-700 active:bg-blue-100 rounded-xl text-xs font-bold flex items-center justify-center gap-1">
             <i class="fa-solid fa-arrow-up-from-bracket"></i> 파일/공유 백업
@@ -531,17 +530,14 @@
       renderHistory();
     };
 
-    // === 아침/점심/저녁 다중 곡선 차트 렌더링 ===
+    // 차트 렌더링
     function renderCharts() {
-      // 1. 날짜별 유니크 키 추출 (오름차순)
       const sorted = [...records].reverse();
       const uniqueDates = Array.from(new Set(sorted.map(r => r.date)));
-      const xLabels = uniqueDates.map(d => d.slice(5)); // '10-28' 형태
+      const xLabels = uniqueDates.map(d => d.slice(5));
 
-      // 날짜 & 시간대별 데이터 맵핑 헬퍼
       const getDataByTiming = (timing, field) => {
         return uniqueDates.map(date => {
-          // 해당 날짜의 해당 시간대 기록 찾기
           const found = sorted.find(r => r.date === date && r.timing === timing);
           return found && found[field] !== null ? found[field] : null;
         });
@@ -550,7 +546,7 @@
       const baseOptions = {
         responsive: true,
         maintainAspectRatio: false,
-        spanGaps: true, // 기록이 없는 날짜는 선을 자연스럽게 연결
+        spanGaps: true,
         plugins: {
           legend: {
             position: 'top',
@@ -568,59 +564,60 @@
         }
       };
 
-      // 1. 혈당 차트 (아침, 점심, 저녁, 취침전 4선 동시 표기)
+      // 1. 혈당 차트
       if (charts.sugar) charts.sugar.destroy();
       charts.sugar = new Chart(document.getElementById('sugarChart'), {
         type: 'line',
         data: {
           labels: xLabels,
           datasets: [
-            { label: '아침', data: getDataByTiming('아침', 'sugar'), borderColor: '#f59e0b', backgroundColor: '#f59e0b', tension: 0.3, pointRadius: 3.5 },
-            { label: '점심', data: getDataByTiming('점심', 'sugar'), borderColor: '#fb923c', backgroundColor: '#fb923c', tension: 0.3, pointRadius: 3.5 },
-            { label: '저녁', data: getDataByTiming('저녁', 'sugar'), borderColor: '#ef4444', backgroundColor: '#ef4444', tension: 0.3, pointRadius: 3.5 },
-            { label: '취침전', data: getDataByTiming('취침전', 'sugar'), borderColor: '#6366f1', backgroundColor: '#6366f1', tension: 0.3, pointRadius: 3.5 }
+            { label: '아침', data: getDataByTiming('아침', 'sugar'), borderColor: '#0284c7', backgroundColor: '#0284c7', tension: 0.3, pointRadius: 3.5 },
+            { label: '점심', data: getDataByTiming('점심', 'sugar'), borderColor: '#16a34a', backgroundColor: '#16a34a', tension: 0.3, pointRadius: 3.5 },
+            { label: '저녁', data: getDataByTiming('저녁', 'sugar'), borderColor: '#e11d48', backgroundColor: '#e11d48', tension: 0.3, pointRadius: 3.5 },
+            { label: '취침전', data: getDataByTiming('취침전', 'sugar'), borderColor: '#7c3aed', backgroundColor: '#7c3aed', tension: 0.3, pointRadius: 3.5 }
           ]
         },
         options: baseOptions
       });
 
-      // 2. 혈압 차트 (시간대별 수축기 혈압 분리)
+      // 2. 혈압 차트
       if (charts.bp) charts.bp.destroy();
       charts.bp = new Chart(document.getElementById('bpChart'), {
         type: 'line',
         data: {
           labels: xLabels,
           datasets: [
-            { label: '아침 혈압', data: getDataByTiming('아침', 'bpSys'), borderColor: '#f59e0b', backgroundColor: '#f59e0b', tension: 0.3, pointRadius: 3.5 },
-            { label: '점심 혈압', data: getDataByTiming('점심', 'bpSys'), borderColor: '#fb923c', backgroundColor: '#fb923c', tension: 0.3, pointRadius: 3.5 },
-            { label: '저녁 혈압', data: getDataByTiming('저녁', 'bpSys'), borderColor: '#ef4444', backgroundColor: '#ef4444', tension: 0.3, pointRadius: 3.5 },
-            { label: '취침전', data: getDataByTiming('취침전', 'bpSys'), borderColor: '#6366f1', backgroundColor: '#6366f1', tension: 0.3, pointRadius: 3.5 }
+            { label: '아침 혈압', data: getDataByTiming('아침', 'bpSys'), borderColor: '#0284c7', backgroundColor: '#0284c7', tension: 0.3, pointRadius: 3.5 },
+            { label: '점심 혈압', data: getDataByTiming('점심', 'bpSys'), borderColor: '#16a34a', backgroundColor: '#16a34a', tension: 0.3, pointRadius: 3.5 },
+            { label: '저녁 혈압', data: getDataByTiming('저녁', 'bpSys'), borderColor: '#e11d48', backgroundColor: '#e11d48', tension: 0.3, pointRadius: 3.5 },
+            { label: '취침전', data: getDataByTiming('취침전', 'bpSys'), borderColor: '#7c3aed', backgroundColor: '#7c3aed', tension: 0.3, pointRadius: 3.5 }
           ]
         },
         options: baseOptions
       });
 
-      // 3. 체중 차트 (아침 공복 체중 vs 저녁 체중)
+      // 3. 체중 차트
       if (charts.weight) charts.weight.destroy();
       charts.weight = new Chart(document.getElementById('weightChart'), {
         type: 'line',
         data: {
           labels: xLabels,
           datasets: [
-            { label: '아침 체중', data: getDataByTiming('아침', 'weight'), borderColor: '#f59e0b', backgroundColor: '#f59e0b', tension: 0.3, pointRadius: 3.5 },
-            { label: '저녁 체중', data: getDataByTiming('저녁', 'weight'), borderColor: '#3b82f6', backgroundColor: '#3b82f6', tension: 0.3, pointRadius: 3.5 }
+            { label: '아침 체중', data: getDataByTiming('아침', 'weight'), borderColor: '#0284c7', backgroundColor: '#0284c7', tension: 0.3, pointRadius: 3.5 },
+            { label: '저녁 체중', data: getDataByTiming('저녁', 'weight'), borderColor: '#e11d48', backgroundColor: '#e11d48', tension: 0.3, pointRadius: 3.5 }
           ]
         },
         options: baseOptions
       });
     }
 
-    // 백업/공유
+    // === 중복 다운로드 해결: 정확히 1번만 단독 분기 실행 ===
     document.getElementById('backup-share-btn').addEventListener('click', async () => {
       const dataStr = JSON.stringify(records, null, 2);
       const filename = `health_backup_${new Date().toISOString().slice(0,10)}.json`;
       const file = new File([dataStr], filename, { type: 'application/json' });
 
+      // 1. 모바일 환경(공유 API 지원 시): 오직 공유창만 띄우고 즉시 끝냄
       if (navigator.canShare && navigator.canShare({ files: [file] })) {
         try {
           await navigator.share({
@@ -628,12 +625,13 @@
             title: '건강 관리 기록 백업',
             text: '건강 관리 기록 데이터 백업 파일입니다.'
           });
-          return;
         } catch (e) {
-          if (e.name !== 'AbortError') console.error(e);
+          // 사용자가 공유창 취소 시 조용히 무시
         }
+        return; 
       }
 
+      // 2. PC 또는 공유 미지원 브라우저: 오직 일반 파일 다운로드 1회만 실행
       const blob = new Blob([dataStr], { type: 'application/json' });
       const a = document.createElement('a');
       a.href = URL.createObjectURL(blob);
@@ -641,6 +639,7 @@
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
+      URL.revokeObjectURL(a.href);
     });
 
     // 텍스트 복사 백업
@@ -711,7 +710,7 @@
       }
     }
 
-    // 초기화
+    // 전체 초기화
     document.getElementById('clear-all-btn').addEventListener('click', () => {
       if (confirm('모든 기록을 삭제하시겠습니까? 복구할 수 없습니다.')) {
         records = [];
