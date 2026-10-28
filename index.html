@@ -66,7 +66,6 @@
       box-shadow: 0 1px 2px rgba(37, 99, 235, 0.2);
     }
 
-    /* 가로 스크롤 커스텀 스크롤바 */
     .chart-scroll-wrap::-webkit-scrollbar {
       height: 4px;
     }
@@ -265,7 +264,7 @@
       </button>
     </section>
 
-    <!-- TAB 2: Charts (반응형 줌인 및 스마트 가로 스크롤 적용) -->
+    <!-- TAB 2: Charts (모든 그래프 반응형 줌인 및 '보기' 단어 제거) -->
     <section id="tab-charts" class="space-y-4 hidden">
       
       <!-- 1. 혈당 차트 -->
@@ -284,16 +283,15 @@
 
         <div class="grid grid-cols-2 gap-1.5 p-1 bg-slate-100 rounded-xl border border-slate-200">
           <button type="button" id="sugar-mode-pre" class="py-2.5 text-xs font-bold rounded-lg transition-all bg-white text-sky-600 shadow-sm">
-            식전 혈당 보기
+            식전 혈당
           </button>
           <button type="button" id="sugar-mode-post" class="py-2.5 text-xs font-bold rounded-lg transition-all text-slate-500">
-            식후 혈당 보기
+            식후 혈당
           </button>
         </div>
 
         <div class="grid grid-cols-4 gap-1.5 pt-1" id="sugar-legend-container"></div>
         
-        <!-- 반응형 스크롤 래퍼 -->
         <div class="chart-scroll-wrap overflow-x-auto overflow-y-hidden pt-2">
           <div class="h-64" id="sugar-chart-box" style="min-width: 100%;">
             <canvas id="sugarChart"></canvas>
@@ -347,7 +345,7 @@
         </div>
       </div>
 
-      <!-- 3. 체중 & BMI 차트 (동적 줌인 + 스크롤 반응형) -->
+      <!-- 3. 체중 & BMI 차트 ('보기' 제거) -->
       <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm space-y-2.5">
         <div class="flex items-center justify-between">
           <div>
@@ -361,12 +359,13 @@
           </span>
         </div>
 
+        <!-- 체중 (kg) / BMI 스위치 버튼 -->
         <div class="grid grid-cols-2 gap-1.5 p-1 bg-slate-100 rounded-xl border border-slate-200">
           <button type="button" id="weight-mode-kg" class="py-2.5 text-xs font-bold rounded-lg transition-all bg-white text-indigo-600 shadow-sm">
-            체중(kg) 보기
+            체중 (kg)
           </button>
           <button type="button" id="weight-mode-bmi" class="py-2.5 text-xs font-bold rounded-lg transition-all text-slate-500">
-            BMI 지수 보기
+            BMI
           </button>
         </div>
 
@@ -512,10 +511,38 @@
     };
 
     const timingColors = {
-      '아침': { border: '#0284c7', textClass: 'text-sky-600', bgClass: 'bg-sky-50', badgeBorder: 'border-sky-200' },
-      '점심': { border: '#16a34a', textClass: 'text-emerald-600', bgClass: 'bg-emerald-50', badgeBorder: 'border-emerald-200' },
-      '저녁': { border: '#e11d48', textClass: 'text-rose-600', bgClass: 'bg-rose-50', badgeBorder: 'border-rose-200' },
-      '취침전': { border: '#7c3aed', textClass: 'text-purple-600', bgClass: 'bg-purple-50', badgeBorder: 'border-purple-200' }
+      '아침': { 
+        border: '#0284c7', 
+        diaBorder: '#38bdf8', 
+        textClass: 'text-sky-600', 
+        diaTextClass: 'text-sky-400', 
+        bgClass: 'bg-sky-50', 
+        badgeBorder: 'border-sky-200' 
+      },
+      '점심': { 
+        border: '#16a34a', 
+        diaBorder: '#4ade80', 
+        textClass: 'text-emerald-600', 
+        diaTextClass: 'text-emerald-400', 
+        bgClass: 'bg-emerald-50', 
+        badgeBorder: 'border-emerald-200' 
+      },
+      '저녁': { 
+        border: '#e11d48', 
+        diaBorder: '#fb7185', 
+        textClass: 'text-rose-600', 
+        diaTextClass: 'text-rose-400', 
+        bgClass: 'bg-rose-50', 
+        badgeBorder: 'border-rose-200' 
+      },
+      '취침전': { 
+        border: '#7c3aed', 
+        diaBorder: '#c084fc', 
+        textClass: 'text-purple-600', 
+        diaTextClass: 'text-purple-400', 
+        bgClass: 'bg-purple-50', 
+        badgeBorder: 'border-purple-200' 
+      }
     };
 
     function calculateBmi(weightKg, heightCm) {
@@ -767,7 +794,7 @@
       btn.addEventListener('click', () => switchTab(btn.dataset.tab));
     });
 
-    // 식전 / 식후 스위치 버튼
+    // 식전 / 식후 스위치 버튼 ('보기' 단어 제거)
     document.getElementById('sugar-mode-pre').addEventListener('click', () => {
       currentSugarMode = 'pre';
       document.getElementById('sugar-mode-pre').className = 'py-2.5 text-xs font-bold rounded-lg transition-all bg-white text-sky-600 shadow-sm';
@@ -784,7 +811,7 @@
       renderSugarChart();
     });
 
-    // 체중 / BMI 스위치 버튼
+    // 체중 / BMI 스위치 버튼 ('보기' 단어 제거)
     document.getElementById('weight-mode-kg').addEventListener('click', () => {
       currentWeightMode = 'kg';
       document.getElementById('weight-mode-kg').className = 'py-2.5 text-xs font-bold rounded-lg transition-all bg-white text-indigo-600 shadow-sm';
@@ -824,6 +851,7 @@
       });
     });
 
+    // 내역 화면 렌더링
     function renderHistory() {
       const container = document.getElementById('history-list');
       document.getElementById('record-count').innerText = `${records.length}건`;
@@ -857,7 +885,7 @@
             </div>
 
             <div class="text-xs text-slate-600 flex flex-wrap gap-x-3.5 gap-y-1">
-              ${r.bpSys ? `<span>혈압: <b class="${color.textClass} font-bold text-sm">${r.bpSys}/${r.bpDia}</b></span>` : ''}
+              ${r.bpSys ? `<span>혈압: <b class="${color.textClass} font-extrabold text-sm">${r.bpSys}</b><span class="text-slate-400 font-bold mx-0.5">/</span><b class="${color.diaTextClass} font-extrabold text-sm">${r.bpDia}</b></span>` : ''}
               ${preVal ? `<span>식전: <b class="${color.textClass} font-bold text-sm">${preVal}</b></span>` : ''}
               ${postVal ? `<span>식후: <b class="${color.textClass} font-bold text-sm">${postVal}</b></span>` : ''}
               ${r.weight ? `<span>체중: <b class="${color.textClass} font-bold text-sm">${r.weight}kg</b> ${bmiInfo ? `<span class="text-[11px] font-bold text-slate-500">(BMI ${bmiInfo.bmi})</span>` : ''}</span>` : ''}
@@ -977,7 +1005,6 @@
       });
     }
 
-    // 겹침 방지 및 고가독성 데이터 라벨
     const highLegibilityDataLabels = {
       align: 'top',
       anchor: 'end',
@@ -1009,11 +1036,11 @@
       return uniqueDates;
     }
 
-    // 데이터 수에 맞춰 반응형 가로 스크롤 폭 계산 (데이터가 많아도 겹침 방지)
+    // 반응형 가로 스크롤 폭 계산 (데이터가 많아져도 라벨 간격 확보)
     function adjustBoxWidth(boxId, count) {
       const box = document.getElementById(boxId);
       if (!box) return;
-      const minPerItem = 60; // 데이터 1개당 최소 60px 확보
+      const minPerItem = 65;
       const neededWidth = count * minPerItem;
       if (neededWidth > 320) {
         box.style.width = `${neededWidth}px`;
@@ -1022,22 +1049,26 @@
       }
     }
 
-    // 1. 혈당 차트
+    // 1. 혈당 차트 (동적 반응형 줌인 적용)
     function renderSugarChart() {
       const sorted = [...records].reverse();
       const dates = getFilteredDates(selectedRanges.sugar);
       const xLabels = dates.map(d => d.slice(5));
       adjustBoxWidth('sugar-chart-box', dates.length);
 
+      const allValues = [];
       const getSugarData = (timing, type) => {
         return dates.map(date => {
           const found = sorted.find(r => r.date === date && r.timing === timing);
           if (!found) return null;
+          let val = null;
           if (type === 'pre') {
-            return found.sugarPre !== undefined ? found.sugarPre : (found.sugarType === '식전' ? found.sugar : null);
+            val = found.sugarPre !== undefined ? found.sugarPre : (found.sugarType === '식전' ? found.sugar : null);
           } else {
-            return found.sugarPost !== undefined ? found.sugarPost : (found.sugarType === '식후 2시간' ? found.sugar : null);
+            val = found.sugarPost !== undefined ? found.sugarPost : (found.sugarType === '식후 2시간' ? found.sugar : null);
           }
+          if (val !== null) allValues.push(val);
+          return val;
         });
       };
 
@@ -1051,6 +1082,18 @@
         { label: '저녁', data: getSugarData('저녁', currentSugarMode), borderColor: '#e11d48', backgroundColor: '#e11d48', tension: 0.25, pointStyle: 'rectRounded', pointRadius: 5.5, pointHoverRadius: 7 },
         { label: '취침전', data: getSugarData('취침전', currentSugarMode), borderColor: '#7c3aed', backgroundColor: '#7c3aed', tension: 0.25, pointStyle: 'rectRounded', pointRadius: 5.5, pointHoverRadius: 7 }
       ];
+
+      // 혈당 Y축 동적 줌인
+      let dynamicMin = undefined;
+      let dynamicMax = undefined;
+      if (allValues.length > 0) {
+        const minVal = Math.min(...allValues, targetVal);
+        const maxVal = Math.max(...allValues, targetVal);
+        const diff = maxVal - minVal;
+        const pad = diff <= 20 ? 15 : Math.ceil(diff * 0.25);
+        dynamicMin = Math.max(0, Math.floor((minVal - pad) / 10) * 10);
+        dynamicMax = Math.ceil((maxVal + pad) / 10) * 10;
+      }
 
       if (dates.length > 0) {
         datasets.push({
@@ -1081,37 +1124,56 @@
           },
           scales: {
             x: { ticks: { font: { size: 11, weight: '700' } } },
-            y: { ticks: { font: { size: 11, weight: '700' } }, grace: '20%' }
+            y: { 
+              suggestedMin: dynamicMin,
+              suggestedMax: dynamicMax,
+              ticks: { font: { size: 11, weight: '700' } } 
+            }
           }
         }
       });
       buildSquareTabLegend('sugar-legend-container', charts.sugar);
     }
 
-    // 2. 혈압 차트
+    // 2. 혈압 차트 (동적 반응형 줌인 적용)
     function renderBpChart() {
       const sorted = [...records].reverse();
       const dates = getFilteredDates(selectedRanges.bp);
       const xLabels = dates.map(d => d.slice(5));
       adjustBoxWidth('bp-chart-box', dates.length);
 
+      const allValues = [];
       const getFieldData = (timing, field) => {
         return dates.map(date => {
           const found = sorted.find(r => r.date === date && r.timing === timing);
-          return found && found[field] !== null ? found[field] : null;
+          if (!found || found[field] === null) return null;
+          allValues.push(found[field]);
+          return found[field];
         });
       };
 
       const datasets = [
         { label: '아침 수축기', data: getFieldData('아침', 'bpSys'), borderColor: '#0284c7', backgroundColor: '#0284c7', tension: 0.25, pointStyle: 'rectRounded', pointRadius: 5.5, pointHoverRadius: 7 },
-        { label: '아침 이완기', data: getFieldData('아침', 'bpDia'), borderColor: '#0284c7', borderDash: [4, 4], backgroundColor: '#0284c7', tension: 0.25, pointStyle: 'rectRounded', pointRadius: 4.5, pointHoverRadius: 6 },
+        { label: '아침 이완기', data: getFieldData('아침', 'bpDia'), borderColor: '#38bdf8', borderDash: [4, 4], backgroundColor: '#38bdf8', tension: 0.25, pointStyle: 'rectRounded', pointRadius: 4.5, pointHoverRadius: 6 },
         { label: '점심 수축기', data: getFieldData('점심', 'bpSys'), borderColor: '#16a34a', backgroundColor: '#16a34a', tension: 0.25, pointStyle: 'rectRounded', pointRadius: 5.5, pointHoverRadius: 7 },
-        { label: '점심 이완기', data: getFieldData('점심', 'bpDia'), borderColor: '#16a34a', borderDash: [4, 4], backgroundColor: '#16a34a', tension: 0.25, pointStyle: 'rectRounded', pointRadius: 4.5, pointHoverRadius: 6 },
+        { label: '점심 이완기', data: getFieldData('점심', 'bpDia'), borderColor: '#4ade80', borderDash: [4, 4], backgroundColor: '#4ade80', tension: 0.25, pointStyle: 'rectRounded', pointRadius: 4.5, pointHoverRadius: 6 },
         { label: '저녁 수축기', data: getFieldData('저녁', 'bpSys'), borderColor: '#e11d48', backgroundColor: '#e11d48', tension: 0.25, pointStyle: 'rectRounded', pointRadius: 5.5, pointHoverRadius: 7 },
-        { label: '저녁 이완기', data: getFieldData('저녁', 'bpDia'), borderColor: '#e11d48', borderDash: [4, 4], backgroundColor: '#e11d48', tension: 0.25, pointStyle: 'rectRounded', pointRadius: 4.5, pointHoverRadius: 6 },
+        { label: '저녁 이완기', data: getFieldData('저녁', 'bpDia'), borderColor: '#fb7185', borderDash: [4, 4], backgroundColor: '#fb7185', tension: 0.25, pointStyle: 'rectRounded', pointRadius: 4.5, pointHoverRadius: 6 },
         { label: '취침전 수축기', data: getFieldData('취침전', 'bpSys'), borderColor: '#7c3aed', backgroundColor: '#7c3aed', tension: 0.25, pointStyle: 'rectRounded', pointRadius: 5.5, pointHoverRadius: 7 },
-        { label: '취침전 이완기', data: getFieldData('취침전', 'bpDia'), borderColor: '#7c3aed', borderDash: [4, 4], backgroundColor: '#7c3aed', tension: 0.25, pointStyle: 'rectRounded', pointRadius: 4.5, pointHoverRadius: 6 }
+        { label: '취침전 이완기', data: getFieldData('취침전', 'bpDia'), borderColor: '#c084fc', borderDash: [4, 4], backgroundColor: '#c084fc', tension: 0.25, pointStyle: 'rectRounded', pointRadius: 4.5, pointHoverRadius: 6 }
       ];
+
+      // 혈압 Y축 동적 줌인
+      let dynamicMin = undefined;
+      let dynamicMax = undefined;
+      if (allValues.length > 0) {
+        const minVal = Math.min(...allValues, 80);
+        const maxVal = Math.max(...allValues, 120);
+        const diff = maxVal - minVal;
+        const pad = diff <= 20 ? 15 : Math.ceil(diff * 0.2);
+        dynamicMin = Math.max(40, Math.floor((minVal - pad) / 10) * 10);
+        dynamicMax = Math.ceil((maxVal + pad) / 10) * 10;
+      }
 
       if (dates.length > 0) {
         datasets.push(
@@ -1154,14 +1216,18 @@
           },
           scales: {
             x: { ticks: { font: { size: 11, weight: '700' } } },
-            y: { ticks: { font: { size: 11, weight: '700' } }, grace: '20%' }
+            y: { 
+              suggestedMin: dynamicMin,
+              suggestedMax: dynamicMax,
+              ticks: { font: { size: 11, weight: '700' } } 
+            }
           }
         }
       });
       buildBloodPressureSquareLegend('bp-legend-container', charts.bp);
     }
 
-    // 3. 체중 & BMI 차트 (89, 90, 91kg 등 1kg 차이도 시원하게 줌인되는 동적 반응형 스케일)
+    // 3. 체중 & BMI 차트 (동적 반응형 줌인)
     function renderWeightChart() {
       const sorted = [...records].reverse();
       const dates = getFilteredDates(selectedRanges.weight);
@@ -1193,7 +1259,6 @@
         { label: '취침전', data: getVal('취침전'), borderColor: '#7c3aed', backgroundColor: '#7c3aed', tension: 0.25, pointStyle: 'rectRounded', pointRadius: 5.5, pointHoverRadius: 7 }
       ];
 
-      // 동적 Y축 스케일 산출 (89, 90, 91kg 입력 시 자동으로 86~94kg으로 줌인하여 칸 겹침 방지)
       let dynamicMin = undefined;
       let dynamicMax = undefined;
       if (allValues.length > 0) {
@@ -1202,12 +1267,10 @@
         const diff = maxVal - minVal;
         
         if (currentWeightMode === 'kg') {
-          // 체중 변화 폭이 5kg 이하로 조밀할 때 상하 2~3kg 여유만 주고 대폭 줌인
           const pad = diff <= 4 ? 3 : Math.ceil(diff * 0.35);
           dynamicMin = Math.max(0, Math.floor(minVal - pad));
           dynamicMax = Math.ceil(maxVal + pad);
         } else {
-          // BMI 모드
           const pad = diff <= 2 ? 1.5 : diff * 0.3;
           dynamicMin = Math.max(10, Math.floor((minVal - pad) * 10) / 10);
           dynamicMax = Math.ceil((maxVal + pad) * 10) / 10;
@@ -1218,7 +1281,6 @@
         if (currentWeightMode === 'kg') {
           if (userHeight) {
             const normalWeightMax = Math.round(23 * (userHeight / 100) * (userHeight / 100) * 10) / 10;
-            // 기준선이 현재 줌인 범위 내에 있거나 가까울 때만 깔끔하게 표시
             if (!dynamicMin || (normalWeightMax >= dynamicMin - 5 && normalWeightMax <= dynamicMax + 5)) {
               datasets.push({
                 label: `정상체중 (${normalWeightMax}kg)`,
@@ -1278,7 +1340,7 @@
               suggestedMin: dynamicMin,
               suggestedMax: dynamicMax,
               ticks: {
-                stepSize: currentWeightMode === 'kg' ? 1 : 0.5, // 1kg 단위로 세밀하게 눈금 형성
+                stepSize: currentWeightMode === 'kg' ? 1 : 0.5,
                 font: { size: 11, weight: '700' }
               }
             }
