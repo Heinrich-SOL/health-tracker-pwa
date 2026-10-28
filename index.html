@@ -206,13 +206,12 @@
         </div>
       </div>
 
-      <!-- Weight Card (키 고정값 설정 및 실시간 BMI 자동 표시) -->
+      <!-- Weight Card -->
       <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm space-y-3">
         <div class="flex items-center justify-between">
           <div class="flex items-center gap-1.5 text-sm font-bold text-slate-800">
             <span class="w-2.5 h-2.5 rounded-full bg-indigo-500"></span> 몸무게 & BMI
           </div>
-          <!-- 키 고정값 빠른 설정 버튼 -->
           <button type="button" id="btn-quick-height" class="text-xs font-semibold text-blue-600 bg-blue-50 hover:bg-blue-100 px-2.5 py-1 rounded-lg flex items-center gap-1 transition-colors">
             <i class="fa-solid fa-ruler-vertical text-[10px]"></i>
             <span id="label-user-height">키 미설정</span>
@@ -227,7 +226,6 @@
           </div>
         </div>
 
-        <!-- 실시간 BMI 계산 결과 배너 (평소엔 숨김 또는 안내) -->
         <div id="bmi-display-banner" class="hidden bg-indigo-50/70 border border-indigo-100 px-3.5 py-2.5 rounded-xl flex items-center justify-between">
           <div class="flex items-center gap-1.5">
             <i class="fa-solid fa-gauge text-indigo-600 text-xs"></i>
@@ -318,14 +316,25 @@
         </div>
       </div>
 
-      <!-- 3. 체중 차트 (BMI 정상체중 기준선 반영) -->
+      <!-- 3. 체중 & BMI 차트 (상단 [체중 보기 | BMI 보기] 그리드 스위치 추가) -->
       <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm space-y-2.5">
         <div>
-          <h2 class="text-sm font-bold text-slate-800 flex items-center gap-1.5">
+          <h2 class="text-sm font-bold text-slate-800 flex items-center gap-1.5" id="weight-chart-title">
             <i class="fa-solid fa-weight-scale text-indigo-600"></i> 체중 변화 추이 (kg)
           </h2>
           <span class="text-[11px] text-slate-400 mt-0.5 block">시간대별 버튼 터치로 켜고 끄기</span>
         </div>
+
+        <!-- 체중 / BMI 상단 전환 그리드 스위치 -->
+        <div class="grid grid-cols-2 gap-1.5 p-1 bg-slate-100 rounded-xl border border-slate-200">
+          <button type="button" id="weight-mode-kg" class="py-2.5 text-xs font-bold rounded-lg transition-all bg-white text-indigo-600 shadow-sm">
+            체중(kg) 보기
+          </button>
+          <button type="button" id="weight-mode-bmi" class="py-2.5 text-xs font-bold rounded-lg transition-all text-slate-500">
+            BMI 지수 보기
+          </button>
+        </div>
+
         <div class="grid grid-cols-4 gap-1.5 pt-1" id="weight-legend-container"></div>
         <div class="h-56 pt-2">
           <canvas id="weightChart"></canvas>
@@ -351,9 +360,8 @@
       <div id="history-list" class="space-y-2.5"></div>
     </section>
 
-    <!-- TAB 4: Settings (키 고정값 영구 설정 섹션 추가) -->
+    <!-- TAB 4: Settings -->
     <section id="tab-settings" class="space-y-3.5 hidden">
-      <!-- 키 고정값 설정 카드 -->
       <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm space-y-3">
         <h2 class="text-sm font-bold text-slate-800 flex items-center gap-1.5">
           <i class="fa-solid fa-ruler-vertical text-indigo-600"></i> 기본 신체 정보 (키 고정값)
@@ -450,10 +458,11 @@
     Chart.register(ChartDataLabels);
 
     let records = JSON.parse(localStorage.getItem('health_records') || '[]');
-    let userHeight = parseFloat(localStorage.getItem('user_height_cm')) || null; // 키 고정값
+    let userHeight = parseFloat(localStorage.getItem('user_height_cm')) || null;
     let currentTiming = '아침';
     let editingId = null;
     let currentSugarMode = 'pre';
+    let currentWeightMode = 'kg'; // 'kg': 체중 보기, 'bmi': BMI 보기
     let charts = {};
 
     let selectedRanges = {
@@ -469,7 +478,6 @@
       '취침전': { border: '#7c3aed', textClass: 'text-purple-600', bgClass: 'bg-purple-50', badgeBorder: 'border-purple-200' }
     };
 
-    // BMI 계산 및 상태 반환 헬퍼 (대한비만학회 기준)
     function calculateBmi(weightKg, heightCm) {
       if (!weightKg || !heightCm) return null;
       const hM = heightCm / 100;
@@ -528,10 +536,8 @@
       banner.classList.add('hidden');
     }
 
-    // 몸무게 입력 시 실시간 BMI 업데이트
     document.getElementById('weight').addEventListener('input', updateRealtimeBmi);
 
-    // 키 고정값 저장 로직
     function promptOrSaveHeight(newVal) {
       if (newVal && !isNaN(newVal) && newVal > 50 && newVal < 250) {
         userHeight = Math.round(newVal * 10) / 10;
@@ -736,6 +742,28 @@
       renderSugarChart();
     });
 
+    // 체중 / BMI 스위치 버튼
+    document.getElementById('weight-mode-kg').addEventListener('click', () => {
+      currentWeightMode = 'kg';
+      document.getElementById('weight-mode-kg').className = 'py-2.5 text-xs font-bold rounded-lg transition-all bg-white text-indigo-600 shadow-sm';
+      document.getElementById('weight-mode-bmi').className = 'py-2.5 text-xs font-bold rounded-lg transition-all text-slate-500';
+      document.getElementById('weight-chart-title').innerHTML = `<i class="fa-solid fa-weight-scale text-indigo-600"></i> 체중 변화 추이 (kg)`;
+      renderWeightChart();
+    });
+
+    document.getElementById('weight-mode-bmi').addEventListener('click', () => {
+      if (!userHeight) {
+        alert('BMI를 확인하려면 먼저 키를 설정해 주세요.');
+        document.getElementById('btn-quick-height').click();
+        return;
+      }
+      currentWeightMode = 'bmi';
+      document.getElementById('weight-mode-bmi').className = 'py-2.5 text-xs font-bold rounded-lg transition-all bg-white text-indigo-600 shadow-sm';
+      document.getElementById('weight-mode-kg').className = 'py-2.5 text-xs font-bold rounded-lg transition-all text-slate-500';
+      document.getElementById('weight-chart-title').innerHTML = `<i class="fa-solid fa-gauge text-indigo-600"></i> BMI 지수 변화 추이`;
+      renderWeightChart();
+    });
+
     // 기간 필터 버튼 이벤트
     document.querySelectorAll('.range-group').forEach(group => {
       const target = group.dataset.target;
@@ -765,7 +793,6 @@
         const postVal = r.sugarPost !== undefined ? r.sugarPost : (r.sugarType === '식후 2시간' ? r.sugar : null);
         const color = timingColors[r.timing] || timingColors['아침'];
 
-        // 키가 있을 경우 BMI 계산 표시
         const bmiInfo = (r.weight && userHeight) ? calculateBmi(r.weight, userHeight) : null;
 
         return `
@@ -1067,39 +1094,73 @@
       buildBloodPressureSquareLegend('bp-legend-container', charts.bp);
     }
 
-    // 3. 체중 차트 렌더링 (키가 설정되어 있으면 정상체중 상한선 BMI 23 가이드선 자동 추가)
+    // 3. 체중 & BMI 차트 렌더링 (체중 보기 vs BMI 보기 완벽 분기)
     function renderWeightChart() {
       const sorted = [...records].reverse();
       const dates = getFilteredDates(selectedRanges.weight);
       const xLabels = dates.map(d => d.slice(5));
 
-      const getFieldData = (timing, field) => {
+      const getVal = (timing) => {
         return dates.map(date => {
           const found = sorted.find(r => r.date === date && r.timing === timing);
-          return found && found[field] !== null ? found[field] : null;
+          if (!found || found.weight === null) return null;
+          if (currentWeightMode === 'kg') {
+            return found.weight;
+          } else {
+            // BMI 모드
+            if (!userHeight) return null;
+            const res = calculateBmi(found.weight, userHeight);
+            return res ? res.bmi : null;
+          }
         });
       };
 
       const datasets = [
-        { label: '아침', data: getFieldData('아침', 'weight'), borderColor: '#0284c7', backgroundColor: '#0284c7', tension: 0.3, pointStyle: 'rectRounded', pointRadius: 6, pointHoverRadius: 8 },
-        { label: '점심', data: getFieldData('점심', 'weight'), borderColor: '#16a34a', backgroundColor: '#16a34a', tension: 0.3, pointStyle: 'rectRounded', pointRadius: 6, pointHoverRadius: 8 },
-        { label: '저녁', data: getFieldData('저녁', 'weight'), borderColor: '#e11d48', backgroundColor: '#e11d48', tension: 0.3, pointStyle: 'rectRounded', pointRadius: 6, pointHoverRadius: 8 },
-        { label: '취침전', data: getFieldData('취침전', 'weight'), borderColor: '#7c3aed', backgroundColor: '#7c3aed', tension: 0.3, pointStyle: 'rectRounded', pointRadius: 6, pointHoverRadius: 8 }
+        { label: '아침', data: getVal('아침'), borderColor: '#0284c7', backgroundColor: '#0284c7', tension: 0.3, pointStyle: 'rectRounded', pointRadius: 6, pointHoverRadius: 8 },
+        { label: '점심', data: getVal('점심'), borderColor: '#16a34a', backgroundColor: '#16a34a', tension: 0.3, pointStyle: 'rectRounded', pointRadius: 6, pointHoverRadius: 8 },
+        { label: '저녁', data: getVal('저녁'), borderColor: '#e11d48', backgroundColor: '#e11d48', tension: 0.3, pointStyle: 'rectRounded', pointRadius: 6, pointHoverRadius: 8 },
+        { label: '취침전', data: getVal('취침전'), borderColor: '#7c3aed', backgroundColor: '#7c3aed', tension: 0.3, pointStyle: 'rectRounded', pointRadius: 6, pointHoverRadius: 8 }
       ];
 
-      // 정상 체중 상한선(BMI 23) 가이드선
-      if (userHeight) {
-        const normalWeightMax = Math.round(23 * (userHeight / 100) * (userHeight / 100) * 10) / 10;
-        datasets.push({
-          label: `정상체중 기준 (${normalWeightMax}kg)`,
-          data: dates.map(() => normalWeightMax),
-          borderColor: '#10b981',
-          borderWidth: 1.2,
-          borderDash: [5, 5],
-          pointRadius: 0,
-          fill: false,
-          isGuideLine: true
-        });
+      if (currentWeightMode === 'kg') {
+        // 체중(kg) 모드: 정상체중 상한선(BMI 23 체중) 가이드선
+        if (userHeight) {
+          const normalWeightMax = Math.round(23 * (userHeight / 100) * (userHeight / 100) * 10) / 10;
+          datasets.push({
+            label: `정상체중 기준 (${normalWeightMax}kg)`,
+            data: dates.map(() => normalWeightMax),
+            borderColor: '#10b981',
+            borderWidth: 1.2,
+            borderDash: [5, 5],
+            pointRadius: 0,
+            fill: false,
+            isGuideLine: true
+          });
+        }
+      } else {
+        // BMI 지수 모드: 비만전단계 기준(23) 및 1단계 비만 기준(25) 점선 가이드
+        datasets.push(
+          {
+            label: '과체중 기준선 (BMI 23)',
+            data: dates.map(() => 23),
+            borderColor: '#f59e0b',
+            borderWidth: 1.2,
+            borderDash: [5, 5],
+            pointRadius: 0,
+            fill: false,
+            isGuideLine: true
+          },
+          {
+            label: '비만 기준선 (BMI 25)',
+            data: dates.map(() => 25),
+            borderColor: '#ef4444',
+            borderWidth: 1.2,
+            borderDash: [5, 5],
+            pointRadius: 0,
+            fill: false,
+            isGuideLine: true
+          }
+        );
       }
 
       if (charts.weight) charts.weight.destroy();
