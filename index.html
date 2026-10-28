@@ -28,12 +28,11 @@
     .safe-top { padding-top: env(safe-area-inset-top, 20px); }
     .safe-bottom { padding-bottom: env(safe-area-inset-bottom, 20px); }
 
-    /* 커스텀 범례 토글 버튼 스타일 */
     .legend-chip {
       display: inline-flex;
       align-items: center;
       gap: 5px;
-      padding: 6px 10px;
+      padding: 6px 11px;
       border-radius: 9999px;
       font-size: 11px;
       font-weight: 700;
@@ -46,12 +45,13 @@
       color: #94a3b8 !important;
       border-color: #cbd5e1 !important;
       text-decoration: line-through;
-      opacity: 0.6;
+      opacity: 0.5;
     }
     .legend-chip .dot {
       width: 8px;
       height: 8px;
       border-radius: 9999px;
+      flex-shrink: 0;
     }
   </style>
 </head>
@@ -106,7 +106,7 @@
             <span class="text-[11px] font-bold">저녁</span>
           </button>
           <button type="button" class="timing-btn flex flex-col items-center justify-center py-2 rounded-xl border border-slate-200 text-slate-600 transition-all" data-timing="취침전">
-            <i class="fa-solid fa-moon text-indigo-500 text-xs mb-0.5"></i>
+            <i class="fa-solid fa-moon text-purple-500 text-xs mb-0.5"></i>
             <span class="text-[11px] font-bold">취침전</span>
           </button>
         </div>
@@ -182,6 +182,7 @@
               <span class="text-xs text-slate-400 font-medium">mg/dL</span>
             </div>
           </div>
+
           <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-200 flex items-center justify-between px-3">
             <span class="text-xs font-semibold text-slate-600 flex items-center gap-1.5">
               <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> 식후 혈당 (2시간)
@@ -213,32 +214,44 @@
       </button>
     </section>
 
-    <!-- TAB 2: Charts (큼직한 터치 토글 범례 적용) -->
+    <!-- TAB 2: Charts (식전/식후 분리 토글 + 아침/점심/저녁/취침전 4버튼) -->
     <section id="tab-charts" class="space-y-4 hidden">
+      
       <!-- 1. 혈당 차트 -->
-      <div class="bg-white p-3.5 rounded-2xl border border-slate-200 shadow-sm space-y-2.5">
+      <div class="bg-white p-3.5 rounded-2xl border border-slate-200 shadow-sm space-y-3">
         <div class="flex items-center justify-between">
           <h2 class="text-xs font-bold text-slate-700 flex items-center gap-1.5">
             <i class="fa-solid fa-chart-line text-emerald-600"></i> 혈당 변화 추이 (mg/dL)
           </h2>
-          <span class="text-[10px] text-slate-400">버튼 터치로 켜고 끄기</span>
+          <span class="text-[10px] text-slate-400">시간대 터치로 On/Off</span>
         </div>
-        <!-- 큼직한 알약형 범례 토글 버튼 -->
+
+        <!-- 식전 / 식후 전용 큰 전환 스위치 (단독 분리) -->
+        <div class="grid grid-cols-2 gap-1.5 p-1 bg-slate-100 rounded-xl border border-slate-200">
+          <button type="button" id="sugar-mode-pre" class="py-2 text-xs font-bold rounded-lg transition-all bg-white text-sky-600 shadow-sm">
+            식전 혈당 보기
+          </button>
+          <button type="button" id="sugar-mode-post" class="py-2 text-xs font-bold rounded-lg transition-all text-slate-500">
+            식후 혈당 보기
+          </button>
+        </div>
+
+        <!-- 아침 / 점심 / 저녁 / 취침전 4개 시간대 알약 버튼 -->
         <div class="flex flex-wrap gap-1.5" id="sugar-legend-container"></div>
+        
         <div class="h-48 pt-1">
           <canvas id="sugarChart"></canvas>
         </div>
       </div>
 
-      <!-- 2. 혈압 차트 -->
+      <!-- 2. 혈압 차트 (수축기/이완기) -->
       <div class="bg-white p-3.5 rounded-2xl border border-slate-200 shadow-sm space-y-2.5">
         <div class="flex items-center justify-between">
           <h2 class="text-xs font-bold text-slate-700 flex items-center gap-1.5">
-            <i class="fa-solid fa-heart-pulse text-rose-600"></i> 시간대별 수축기 혈압 (mmHg)
+            <i class="fa-solid fa-heart-pulse text-rose-600"></i> 수축기 / 이완기 변화 추이 (mmHg)
           </h2>
-          <span class="text-[10px] text-slate-400">버튼 터치로 켜고 끄기</span>
+          <span class="text-[10px] text-slate-400">버튼 터치로 On/Off</span>
         </div>
-        <!-- 큼직한 알약형 범례 토글 버튼 -->
         <div class="flex flex-wrap gap-1.5" id="bp-legend-container"></div>
         <div class="h-48 pt-1">
           <canvas id="bpChart"></canvas>
@@ -251,9 +264,8 @@
           <h2 class="text-xs font-bold text-slate-700 flex items-center gap-1.5">
             <i class="fa-solid fa-weight-scale text-indigo-600"></i> 체중 변화 추이 (kg)
           </h2>
-          <span class="text-[10px] text-slate-400">버튼 터치로 켜고 끄기</span>
+          <span class="text-[10px] text-slate-400">버튼 터치로 On/Off</span>
         </div>
-        <!-- 큼직한 알약형 범례 토글 버튼 -->
         <div class="flex flex-wrap gap-1.5" id="weight-legend-container"></div>
         <div class="h-44 pt-1">
           <canvas id="weightChart"></canvas>
@@ -349,7 +361,15 @@
     let records = JSON.parse(localStorage.getItem('health_records') || '[]');
     let currentTiming = '아침';
     let editingId = null;
+    let currentSugarMode = 'pre'; // 'pre': 식전, 'post': 식후
     let charts = {};
+
+    const timingColors = {
+      '아침': { border: '#0284c7', textClass: 'text-sky-600', bgClass: 'bg-sky-50', badgeBorder: 'border-sky-200' },
+      '점심': { border: '#16a34a', textClass: 'text-emerald-600', bgClass: 'bg-emerald-50', badgeBorder: 'border-emerald-200' },
+      '저녁': { border: '#e11d48', textClass: 'text-rose-600', bgClass: 'bg-rose-50', badgeBorder: 'border-rose-200' },
+      '취침전': { border: '#7c3aed', textClass: 'text-purple-600', bgClass: 'bg-purple-50', badgeBorder: 'border-purple-200' }
+    };
 
     function getNowTiming() {
       const h = new Date().getHours();
@@ -502,6 +522,21 @@
       btn.addEventListener('click', () => switchTab(btn.dataset.tab));
     });
 
+    // 식전 / 식후 스위치 버튼 이벤트
+    document.getElementById('sugar-mode-pre').addEventListener('click', () => {
+      currentSugarMode = 'pre';
+      document.getElementById('sugar-mode-pre').className = 'py-2 text-xs font-bold rounded-lg transition-all bg-white text-sky-600 shadow-sm';
+      document.getElementById('sugar-mode-post').className = 'py-2 text-xs font-bold rounded-lg transition-all text-slate-500';
+      renderSugarChart();
+    });
+
+    document.getElementById('sugar-mode-post').addEventListener('click', () => {
+      currentSugarMode = 'post';
+      document.getElementById('sugar-mode-post').className = 'py-2 text-xs font-bold rounded-lg transition-all bg-white text-emerald-600 shadow-sm';
+      document.getElementById('sugar-mode-pre').className = 'py-2 text-xs font-bold rounded-lg transition-all text-slate-500';
+      renderSugarChart();
+    });
+
     function renderHistory() {
       const container = document.getElementById('history-list');
       document.getElementById('record-count').innerText = `${records.length}건`;
@@ -513,19 +548,20 @@
       container.innerHTML = records.map(r => {
         const preVal = r.sugarPre !== undefined ? r.sugarPre : (r.sugarType === '식전' ? r.sugar : null);
         const postVal = r.sugarPost !== undefined ? r.sugarPost : (r.sugarType === '식후 2시간' ? r.sugar : null);
+        const color = timingColors[r.timing] || timingColors['아침'];
 
         return `
           <div class="bg-white p-3 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
             <div class="flex-1 pr-2">
-              <div class="flex items-center gap-1.5 mb-1">
+              <div class="flex items-center gap-1.5 mb-1.5">
                 <span class="text-xs font-bold text-slate-800">${r.date} ${r.time}</span>
-                <span class="text-[10px] px-1.5 py-0.5 rounded bg-blue-50 text-blue-700 font-semibold">${r.timing}</span>
+                <span class="text-[10px] px-2 py-0.5 rounded-md ${color.bgClass} ${color.textClass} font-bold border ${color.badgeBorder}">${r.timing}</span>
               </div>
-              <div class="text-[11px] text-slate-600 flex flex-wrap gap-x-2.5 gap-y-0.5">
-                ${r.bpSys ? `<span>혈압: <b class="text-slate-800">${r.bpSys}/${r.bpDia}</b></span>` : ''}
-                ${preVal ? `<span>식전: <b class="text-sky-600">${preVal}</b></span>` : ''}
-                ${postVal ? `<span>식후: <b class="text-emerald-600">${postVal}</b></span>` : ''}
-                ${r.weight ? `<span>체중: <b class="text-slate-800">${r.weight}kg</b></span>` : ''}
+              <div class="text-[11px] text-slate-600 flex flex-wrap gap-x-3 gap-y-1">
+                ${r.bpSys ? `<span>혈압: <b class="${color.textClass} font-bold">${r.bpSys}/${r.bpDia}</b></span>` : ''}
+                ${preVal ? `<span>식전: <b class="${color.textClass} font-bold">${preVal}</b></span>` : ''}
+                ${postVal ? `<span>식후: <b class="${color.textClass} font-bold">${postVal}</b></span>` : ''}
+                ${r.weight ? `<span>체중: <b class="${color.textClass} font-bold">${r.weight}kg</b></span>` : ''}
               </div>
             </div>
             <div class="flex items-center gap-1 shrink-0">
@@ -578,7 +614,6 @@
       renderHistory();
     };
 
-    // === 큼직한 커스텀 터치 범례 생성 헬퍼 함수 ===
     function buildCustomLegend(containerId, chartInstance) {
       const container = document.getElementById(containerId);
       if (!container) return;
@@ -602,15 +637,15 @@
           const currentlyVisible = chartInstance.isDatasetVisible(index);
           chartInstance.setDatasetVisibility(index, !currentlyVisible);
           chartInstance.update();
-          buildCustomLegend(containerId, chartInstance); // 버튼 상태 UI 동기화
+          buildCustomLegend(containerId, chartInstance);
         });
 
         container.appendChild(chip);
       });
     }
 
-    // 차트 렌더링
-    function renderCharts() {
+    // 혈당 단독 렌더링 함수 (식전/식후 모드에 따라 아침/점심/저녁/취침전 4선만 출력)
+    function renderSugarChart() {
       const sorted = [...records].reverse();
       const uniqueDates = Array.from(new Set(sorted.map(r => r.date)));
       const xLabels = uniqueDates.map(d => d.slice(5));
@@ -627,6 +662,43 @@
         });
       };
 
+      const titleSuffix = currentSugarMode === 'pre' ? '식전' : '식후';
+
+      if (charts.sugar) charts.sugar.destroy();
+      charts.sugar = new Chart(document.getElementById('sugarChart'), {
+        type: 'line',
+        data: {
+          labels: xLabels,
+          datasets: [
+            { label: `아침 ${titleSuffix}`, data: getSugarData('아침', currentSugarMode), borderColor: '#0284c7', backgroundColor: '#0284c7', tension: 0.3, pointRadius: 4 },
+            { label: `점심 ${titleSuffix}`, data: getSugarData('점심', currentSugarMode), borderColor: '#16a34a', backgroundColor: '#16a34a', tension: 0.3, pointRadius: 4 },
+            { label: `저녁 ${titleSuffix}`, data: getSugarData('저녁', currentSugarMode), borderColor: '#e11d48', backgroundColor: '#e11d48', tension: 0.3, pointRadius: 4 },
+            { label: `취침전 ${titleSuffix}`, data: getSugarData('취침전', currentSugarMode), borderColor: '#7c3aed', backgroundColor: '#7c3aed', tension: 0.3, pointRadius: 4 }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          spanGaps: true,
+          plugins: {
+            legend: { display: false },
+            tooltip: { callbacks: { title: (items) => `${uniqueDates[items[0].dataIndex]}` } }
+          },
+          scales: {
+            x: { ticks: { font: { size: 10 }, maxRotation: 45 } },
+            y: { ticks: { font: { size: 10 } } }
+          }
+        }
+      });
+      buildCustomLegend('sugar-legend-container', charts.sugar);
+    }
+
+    // 전체 차트 렌더링
+    function renderCharts() {
+      const sorted = [...records].reverse();
+      const uniqueDates = Array.from(new Set(sorted.map(r => r.date)));
+      const xLabels = uniqueDates.map(d => d.slice(5));
+
       const getFieldData = (timing, field) => {
         return uniqueDates.map(date => {
           const found = sorted.find(r => r.date === date && r.timing === timing);
@@ -634,18 +706,13 @@
         });
       };
 
-      // 캔버스 내 기본 미니 범례는 숨기고(display: false), 외부 커스텀 범례 사용
       const baseOptions = {
         responsive: true,
         maintainAspectRatio: false,
         spanGaps: true,
         plugins: {
           legend: { display: false },
-          tooltip: {
-            callbacks: {
-              title: (items) => `${uniqueDates[items[0].dataIndex]}`
-            }
-          }
+          tooltip: { callbacks: { title: (items) => `${uniqueDates[items[0].dataIndex]}` } }
         },
         scales: {
           x: { ticks: { font: { size: 10 }, maxRotation: 45 } },
@@ -653,22 +720,8 @@
         }
       };
 
-      // 1. 혈당 차트
-      if (charts.sugar) charts.sugar.destroy();
-      charts.sugar = new Chart(document.getElementById('sugarChart'), {
-        type: 'line',
-        data: {
-          labels: xLabels,
-          datasets: [
-            { label: '아침 식전', data: getSugarData('아침', 'pre'), borderColor: '#0284c7', backgroundColor: '#0284c7', tension: 0.3, pointRadius: 4 },
-            { label: '아침 식후', data: getSugarData('아침', 'post'), borderColor: '#0ea5e9', borderDash: [4, 4], backgroundColor: '#0ea5e9', tension: 0.3, pointRadius: 4 },
-            { label: '점심 식후', data: getSugarData('점심', 'post'), borderColor: '#16a34a', backgroundColor: '#16a34a', tension: 0.3, pointRadius: 4 },
-            { label: '저녁 식후', data: getSugarData('저녁', 'post'), borderColor: '#e11d48', backgroundColor: '#e11d48', tension: 0.3, pointRadius: 4 }
-          ]
-        },
-        options: baseOptions
-      });
-      buildCustomLegend('sugar-legend-container', charts.sugar);
+      // 1. 혈당 차트 (식전/식후 단독 분리 렌더링)
+      renderSugarChart();
 
       // 2. 혈압 차트
       if (charts.bp) charts.bp.destroy();
@@ -677,10 +730,14 @@
         data: {
           labels: xLabels,
           datasets: [
-            { label: '아침 혈압', data: getFieldData('아침', 'bpSys'), borderColor: '#0284c7', backgroundColor: '#0284c7', tension: 0.3, pointRadius: 4 },
-            { label: '점심 혈압', data: getFieldData('점심', 'bpSys'), borderColor: '#16a34a', backgroundColor: '#16a34a', tension: 0.3, pointRadius: 4 },
-            { label: '저녁 혈압', data: getFieldData('저녁', 'bpSys'), borderColor: '#e11d48', backgroundColor: '#e11d48', tension: 0.3, pointRadius: 4 },
-            { label: '취침전 혈압', data: getFieldData('취침전', 'bpSys'), borderColor: '#7c3aed', backgroundColor: '#7c3aed', tension: 0.3, pointRadius: 4 }
+            { label: '아침 수축기', data: getFieldData('아침', 'bpSys'), borderColor: '#0284c7', backgroundColor: '#0284c7', tension: 0.3, pointRadius: 4 },
+            { label: '아침 이완기', data: getFieldData('아침', 'bpDia'), borderColor: '#38bdf8', borderDash: [3, 3], backgroundColor: '#38bdf8', tension: 0.3, pointRadius: 3.5 },
+            { label: '점심 수축기', data: getFieldData('점심', 'bpSys'), borderColor: '#16a34a', backgroundColor: '#16a34a', tension: 0.3, pointRadius: 4 },
+            { label: '점심 이완기', data: getFieldData('점심', 'bpDia'), borderColor: '#4ade80', borderDash: [3, 3], backgroundColor: '#4ade80', tension: 0.3, pointRadius: 3.5 },
+            { label: '저녁 수축기', data: getFieldData('저녁', 'bpSys'), borderColor: '#e11d48', backgroundColor: '#e11d48', tension: 0.3, pointRadius: 4 },
+            { label: '저녁 이완기', data: getFieldData('저녁', 'bpDia'), borderColor: '#fb7185', borderDash: [3, 3], backgroundColor: '#fb7185', tension: 0.3, pointRadius: 3.5 },
+            { label: '취침전 수축기', data: getFieldData('취침전', 'bpSys'), borderColor: '#7c3aed', backgroundColor: '#7c3aed', tension: 0.3, pointRadius: 4 },
+            { label: '취침전 이완기', data: getFieldData('취침전', 'bpDia'), borderColor: '#a78bfa', borderDash: [3, 3], backgroundColor: '#a78bfa', tension: 0.3, pointRadius: 3.5 }
           ]
         },
         options: baseOptions
@@ -695,7 +752,9 @@
           labels: xLabels,
           datasets: [
             { label: '아침 체중', data: getFieldData('아침', 'weight'), borderColor: '#0284c7', backgroundColor: '#0284c7', tension: 0.3, pointRadius: 4 },
-            { label: '저녁 체중', data: getFieldData('저녁', 'weight'), borderColor: '#e11d48', backgroundColor: '#e11d48', tension: 0.3, pointRadius: 4 }
+            { label: '점심 체중', data: getFieldData('점심', 'weight'), borderColor: '#16a34a', backgroundColor: '#16a34a', tension: 0.3, pointRadius: 4 },
+            { label: '저녁 체중', data: getFieldData('저녁', 'weight'), borderColor: '#e11d48', backgroundColor: '#e11d48', tension: 0.3, pointRadius: 4 },
+            { label: '취침전 체중', data: getFieldData('취침전', 'weight'), borderColor: '#7c3aed', backgroundColor: '#7c3aed', tension: 0.3, pointRadius: 4 }
           ]
         },
         options: baseOptions
