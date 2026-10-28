@@ -66,6 +66,12 @@
       box-shadow: 0 1px 2px rgba(37, 99, 235, 0.2);
     }
 
+    .chart-scroll-wrap {
+      -webkit-overflow-scrolling: touch;
+    }
+    .chart-scroll-wrap canvas {
+      touch-action: pan-x pan-y;
+    }
     .chart-scroll-wrap::-webkit-scrollbar {
       height: 4px;
     }
@@ -300,7 +306,7 @@
         <div class="grid grid-cols-4 gap-1.5 pt-1" id="sugar-legend-container"></div>
         
         <div class="chart-scroll-wrap overflow-x-auto overflow-y-hidden pt-2">
-          <div class="h-64" id="sugar-chart-box" style="min-width: 100%;">
+          <div class="h-64 pr-4" id="sugar-chart-box" style="min-width: 100%;">
             <canvas id="sugarChart"></canvas>
           </div>
         </div>
@@ -342,7 +348,7 @@
         <div class="grid grid-cols-4 gap-1.5 pt-1" id="bp-legend-container"></div>
         
         <div class="chart-scroll-wrap overflow-x-auto overflow-y-hidden pt-2">
-          <div class="h-64" id="bp-chart-box" style="min-width: 100%;">
+          <div class="h-64 pr-4" id="bp-chart-box" style="min-width: 100%;">
             <canvas id="bpChart"></canvas>
           </div>
         </div>
@@ -391,7 +397,7 @@
         <div class="grid grid-cols-4 gap-1.5 pt-1" id="weight-legend-container"></div>
         
         <div class="chart-scroll-wrap overflow-x-auto overflow-y-hidden pt-2">
-          <div class="h-60" id="weight-chart-box" style="min-width: 100%;">
+          <div class="h-60 pr-4" id="weight-chart-box" style="min-width: 100%;">
             <canvas id="weightChart"></canvas>
           </div>
         </div>
@@ -566,7 +572,7 @@
     </div>
   </div>
 
-  <!-- 그래프 전체화면 확대 모달 (식전/식후, 체중/BMI 전환 컨트롤러 추가) -->
+  <!-- 그래프 전체화면 확대 모달 (완벽 반응형 가로 스크롤 및 우측 잘림 방지) -->
   <div id="zoom-modal" class="fixed inset-0 bg-slate-950 z-[100] flex flex-col justify-between p-3 safe-top safe-bottom hidden">
     <div>
       <div class="flex items-center justify-between pb-2 border-b border-slate-800">
@@ -579,17 +585,18 @@
         </button>
       </div>
 
-      <!-- 확대 모달 내 식전/식후 및 체중/BMI 모드 전환 버튼 컨테이너 -->
-      <div id="zoom-switch-container" class="mt-2 hidden">
-        <!-- JS로 동적 생성 -->
-      </div>
+      <!-- 모달 내 식전/식후, 체중/BMI 전환 컨트롤러 -->
+      <div id="zoom-switch-container" class="mt-2 hidden"></div>
     </div>
 
     <div class="grid grid-cols-4 gap-1.5 py-1.5" id="zoom-legend-container"></div>
 
-    <div class="flex-1 w-full overflow-x-auto overflow-y-hidden my-auto chart-scroll-wrap flex items-center">
-      <div id="zoom-chart-box" class="h-[60vh] min-h-[260px]" style="min-width: 100%;">
-        <canvas id="zoomChart"></canvas>
+    <!-- 스크롤 충돌을 없앤 수직 센터링 + 가로 블록 스크롤 컨테이너 -->
+    <div class="flex-1 w-full min-h-0 my-auto flex flex-col justify-center overflow-hidden">
+      <div id="zoom-scroll-wrap" class="w-full overflow-x-auto overflow-y-hidden chart-scroll-wrap py-2">
+        <div id="zoom-chart-box" class="h-[58vh] min-h-[260px] shrink-0 pr-6" style="min-width: 100%;">
+          <canvas id="zoomChart"></canvas>
+        </div>
       </div>
     </div>
 
@@ -987,7 +994,7 @@
         document.querySelectorAll('.chart-scroll-wrap').forEach(wrap => {
           wrap.scrollLeft = wrap.scrollWidth;
         });
-      }, 50);
+      }, 60);
     }
 
     function switchTab(tabId) {
@@ -1014,7 +1021,6 @@
       btn.addEventListener('click', () => switchTab(btn.dataset.tab));
     });
 
-    // 식전 / 식후 스위치 버튼 (기본 뷰)
     function setSugarMode(mode) {
       currentSugarMode = mode;
       const isPre = mode === 'pre';
@@ -1030,7 +1036,6 @@
     document.getElementById('sugar-mode-pre').addEventListener('click', () => setSugarMode('pre'));
     document.getElementById('sugar-mode-post').addEventListener('click', () => setSugarMode('post'));
 
-    // 체중 / BMI 스위치 버튼 (기본 뷰)
     function setWeightMode(mode) {
       if (mode === 'bmi' && !userHeight) {
         alert('BMI를 확인하려면 먼저 키를 설정해 주세요.');
@@ -1274,7 +1279,7 @@
       }
     }
 
-    // 1. 혈당 차트 빌더
+    // 1. 혈당 차트 빌더 (우측 패딩 32~38px 확보로 짤림 방지)
     function buildSugarChartConfig(targetDays, isZoom = false) {
       const dates = getFilteredDates(targetDays);
       const xLabels = dates.map(d => d.slice(5));
@@ -1336,7 +1341,11 @@
           responsive: true,
           maintainAspectRatio: false,
           spanGaps: true,
-          layout: { padding: isZoom ? { top: 35, bottom: 10, left: 10, right: 20 } : { top: 25, bottom: 2, left: 4, right: 6 } },
+          layout: { 
+            padding: isZoom 
+              ? { top: 35, bottom: 12, left: 12, right: 38 } 
+              : { top: 25, bottom: 6, left: 8, right: 32 } 
+          },
           plugins: {
             legend: { display: false },
             tooltip: { callbacks: { title: (items) => `${dates[items[0].dataIndex]}` } },
@@ -1380,7 +1389,7 @@
       buildSquareTabLegend('sugar-legend-container', charts.sugar);
     }
 
-    // 2. 혈압 차트 빌더
+    // 2. 혈압 차트 빌더 (우측 패딩 32~38px 확보로 짤림 방지)
     function buildBpChartConfig(targetDays, isZoom = false) {
       const dates = getFilteredDates(targetDays);
       const xLabels = dates.map(d => d.slice(5));
@@ -1448,7 +1457,11 @@
           responsive: true,
           maintainAspectRatio: false,
           spanGaps: true,
-          layout: { padding: isZoom ? { top: 35, bottom: 10, left: 10, right: 20 } : { top: 25, bottom: 2, left: 4, right: 6 } },
+          layout: { 
+            padding: isZoom 
+              ? { top: 35, bottom: 12, left: 12, right: 38 } 
+              : { top: 25, bottom: 6, left: 8, right: 32 } 
+          },
           plugins: {
             legend: { display: false },
             tooltip: { callbacks: { title: (items) => `${dates[items[0].dataIndex]}` } },
@@ -1492,7 +1505,7 @@
       buildBloodPressureSquareLegend('bp-legend-container', charts.bp);
     }
 
-    // 3. 체중 & BMI 차트 빌더
+    // 3. 체중 & BMI 차트 빌더 (우측 패딩 32~38px 확보로 짤림 방지)
     function buildWeightChartConfig(targetDays, isZoom = false) {
       const dates = getFilteredDates(targetDays);
       const xLabels = dates.map(d => d.slice(5));
@@ -1595,7 +1608,11 @@
           responsive: true,
           maintainAspectRatio: false,
           spanGaps: true,
-          layout: { padding: isZoom ? { top: 35, bottom: 10, left: 10, right: 20 } : { top: 25, bottom: 2, left: 4, right: 6 } },
+          layout: { 
+            padding: isZoom 
+              ? { top: 35, bottom: 12, left: 12, right: 38 } 
+              : { top: 25, bottom: 6, left: 8, right: 32 } 
+          },
           plugins: {
             legend: { display: false },
             tooltip: { callbacks: { title: (items) => `${dates[items[0].dataIndex]}` } },
@@ -1641,7 +1658,7 @@
       buildSquareTabLegend('weight-legend-container', charts.weight);
     }
 
-    // === 그래프 전체화면 확대 모달 관리 (식전/식후, 체중/BMI 전환 컨트롤 연동) ===
+    // === 그래프 전체화면 확대 모달 관리 ===
     function openZoomChart(type) {
       currentZoomType = type;
       const modal = document.getElementById('zoom-modal');
@@ -1655,7 +1672,6 @@
       };
       titleEl.innerText = titles[type];
 
-      // 확대 모달 내 모드 전환 스위치 렌더링
       if (type === 'sugar') {
         switchBox.classList.remove('hidden');
         switchBox.innerHTML = `
@@ -1723,7 +1739,13 @@
 
       if (!config) return;
 
-      adjustBoxWidth('zoom-chart-box', config.datesCount, 45);
+      const datesCount = config.datesCount || 1;
+      // 확대 창에서는 날짜당 65px로 널찍하게 잡아 확실한 가로 스크롤 제공
+      const minWidth = Math.max(datesCount * 65, 380);
+      const zoomBox = document.getElementById('zoom-chart-box');
+      if (zoomBox) {
+        zoomBox.style.width = `${minWidth}px`;
+      }
 
       if (charts.zoom) charts.zoom.destroy();
 
@@ -1740,15 +1762,16 @@
       }
 
       setTimeout(() => {
-        const wrap = document.querySelector('#zoom-modal .chart-scroll-wrap');
+        const wrap = document.getElementById('zoom-scroll-wrap');
         if (wrap) wrap.scrollLeft = wrap.scrollWidth;
-      }, 60);
+      }, 80);
     }
 
     function renderCharts() {
       renderSugarChart();
       renderBpChart();
       renderWeightChart();
+      scrollToLatest();
     }
 
     // 백업: 공유창 1회만 단독 실행
