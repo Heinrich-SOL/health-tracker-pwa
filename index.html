@@ -256,7 +256,7 @@
       </button>
     </section>
 
-    <!-- TAB 2: Charts (정상 복구 & 충돌 제거 버전) -->
+    <!-- TAB 2: Charts -->
     <section id="tab-charts" class="space-y-4 hidden">
       
       <!-- 1. 혈당 차트 -->
@@ -298,24 +298,26 @@
         </div>
       </div>
 
-      <!-- 2. 혈압 차트 -->
+      <!-- 2. 혈압 차트 (기준 뱃지를 '터치로 켜고 끄기' 옆으로 이동하여 제목 줄밀림 완전 해결) -->
       <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm space-y-2.5">
-        <div class="flex items-center justify-between">
-          <div>
-            <h2 class="text-sm font-bold text-slate-800 flex items-center gap-1.5">
-              <i class="fa-solid fa-heart-pulse text-rose-600"></i> 혈압 추이 (실선: 수축기 / 점선: 이완기)
-            </h2>
-            <span class="text-[11px] text-slate-400 mt-0.5 block">시간대별 터치로 켜고 끄기</span>
-          </div>
-          <div class="flex flex-col items-end gap-0.5">
-            <span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-rose-50 text-rose-600 border border-rose-200">
-              수축기 정상 120
-            </span>
-            <span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-sky-50 text-sky-600 border border-sky-200">
-              이완기 정상 80
-            </span>
+        <div>
+          <h2 class="text-sm font-bold text-slate-800 flex items-center gap-1.5">
+            <i class="fa-solid fa-heart-pulse text-rose-600"></i> 혈압 추이 (실선: 수축기 / 점선: 이완기)
+          </h2>
+          <!-- 한 줄 아래로 내려 터치 안내와 뱃지를 나란히 배치 -->
+          <div class="flex items-center justify-between mt-1">
+            <span class="text-[11px] text-slate-400">시간대별 터치로 켜고 끄기</span>
+            <div class="flex items-center gap-1">
+              <span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-rose-50 text-rose-600 border border-rose-200">
+                수축기 120
+              </span>
+              <span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-sky-50 text-sky-600 border border-sky-200">
+                이완기 80
+              </span>
+            </div>
           </div>
         </div>
+
         <div class="grid grid-cols-4 gap-1.5 pt-1" id="bp-legend-container"></div>
         <div class="h-64 pt-2">
           <canvas id="bpChart"></canvas>
@@ -754,7 +756,6 @@
       document.getElementById('sugar-mode-pre').className = 'py-2.5 text-xs font-bold rounded-lg transition-all bg-white text-sky-600 shadow-sm';
       document.getElementById('sugar-mode-post').className = 'py-2.5 text-xs font-bold rounded-lg transition-all text-slate-500';
       document.getElementById('sugar-target-badge').innerText = '정상기준 100';
-      document.getElementById('sugar-target-badge').className = 'text-[11px] font-bold px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200';
       renderSugarChart();
     });
 
@@ -763,7 +764,6 @@
       document.getElementById('sugar-mode-post').className = 'py-2.5 text-xs font-bold rounded-lg transition-all bg-white text-emerald-600 shadow-sm';
       document.getElementById('sugar-mode-pre').className = 'py-2.5 text-xs font-bold rounded-lg transition-all text-slate-500';
       document.getElementById('sugar-target-badge').innerText = '정상기준 140';
-      document.getElementById('sugar-target-badge').className = 'text-[11px] font-bold px-2 py-0.5 rounded bg-amber-50 text-amber-700 border border-amber-200';
       renderSugarChart();
     });
 
@@ -960,7 +960,6 @@
       });
     }
 
-    // 측정 수치 라벨 겹침 방지 (display: 'auto', 기준선 숨김)
     const highLegibilityDataLabels = {
       align: 'top',
       anchor: 'end',
@@ -992,7 +991,7 @@
       return uniqueDates;
     }
 
-    // 1. 혈당 차트 (안전하고 깔끔한 기준선 분리 렌더링)
+    // 1. 혈당 차트 렌더링
     function renderSugarChart() {
       const sorted = [...records].reverse();
       const dates = getFilteredDates(selectedRanges.sugar);
@@ -1021,7 +1020,6 @@
         { label: '취침전', data: getSugarData('취침전', currentSugarMode), borderColor: '#7c3aed', backgroundColor: '#7c3aed', tension: 0.3, pointStyle: 'rectRounded', pointRadius: 6, pointHoverRadius: 8 }
       ];
 
-      // 정상 기준선 (데이터와 겹치지 않는 얇은 점선)
       if (dates.length > 0) {
         datasets.push({
           label: targetTitle,
@@ -1058,7 +1056,7 @@
       buildSquareTabLegend('sugar-legend-container', charts.sugar);
     }
 
-    // 2. 혈압 차트 (안전하고 깔끔한 기준선 분리 렌더링)
+    // 2. 혈압 차트 렌더링
     function renderBpChart() {
       const sorted = [...records].reverse();
       const dates = getFilteredDates(selectedRanges.bp);
@@ -1130,7 +1128,7 @@
       buildBloodPressureSquareLegend('bp-legend-container', charts.bp);
     }
 
-    // 3. 체중 & BMI 차트
+    // 3. 체중 & BMI 차트 렌더링
     function renderWeightChart() {
       const sorted = [...records].reverse();
       const dates = getFilteredDates(selectedRanges.weight);
