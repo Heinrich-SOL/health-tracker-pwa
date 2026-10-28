@@ -28,30 +28,24 @@
     .safe-top { padding-top: env(safe-area-inset-top, 20px); }
     .safe-bottom { padding-bottom: env(safe-area-inset-bottom, 20px); }
 
-    .legend-chip {
-      display: inline-flex;
-      align-items: center;
-      gap: 5px;
-      padding: 6px 12px;
-      border-radius: 9999px;
+    /* 사각형 탭 버튼 스타일 */
+    .tab-toggle-btn {
+      width: 100%;
+      padding: 8px 4px;
+      border-radius: 10px;
       font-size: 11px;
       font-weight: 700;
+      text-align: center;
       transition: all 0.15s ease-in-out;
       border: 1.5px solid transparent;
       cursor: pointer;
     }
-    .legend-chip.inactive {
-      background-color: #f1f5f9 !important;
+    .tab-toggle-btn.inactive {
+      background-color: #f8fafc !important;
       color: #94a3b8 !important;
-      border-color: #cbd5e1 !important;
+      border-color: #e2e8f0 !important;
       text-decoration: line-through;
-      opacity: 0.5;
-    }
-    .legend-chip .dot {
-      width: 8px;
-      height: 8px;
-      border-radius: 9999px;
-      flex-shrink: 0;
+      opacity: 0.55;
     }
   </style>
 </head>
@@ -213,10 +207,10 @@
       </button>
     </section>
 
-    <!-- TAB 2: Charts -->
+    <!-- TAB 2: Charts (식전 혈당 보기와 동일한 사각 탭 버튼 방식 적용) -->
     <section id="tab-charts" class="space-y-4 hidden">
       
-      <!-- 1. 혈당 차트: 버튼에 [식전/식후] 단어 없이 [아침, 점심, 저녁, 취침전]만 표기 -->
+      <!-- 1. 혈당 차트 -->
       <div class="bg-white p-3.5 rounded-2xl border border-slate-200 shadow-sm space-y-3">
         <div class="flex items-center justify-between">
           <h2 class="text-xs font-bold text-slate-700 flex items-center gap-1.5">
@@ -235,29 +229,29 @@
           </button>
         </div>
 
-        <!-- 4개 시간대 버튼: 아침 / 점심 / 저녁 / 취침전 -->
-        <div class="flex flex-wrap gap-1.5" id="sugar-legend-container"></div>
+        <!-- 사각형 탭 버튼 4개 그리드 -->
+        <div class="grid grid-cols-4 gap-1.5" id="sugar-legend-container"></div>
         
         <div class="h-48 pt-1">
           <canvas id="sugarChart"></canvas>
         </div>
       </div>
 
-      <!-- 2. 혈압 차트: 수축기(실선)+이완기(점선) 한 쌍으로 동시 토글, 버튼은 [아침, 점심, 저녁, 취침전] -->
+      <!-- 2. 혈압 차트 -->
       <div class="bg-white p-3.5 rounded-2xl border border-slate-200 shadow-sm space-y-2.5">
         <div class="flex items-center justify-between">
           <h2 class="text-xs font-bold text-slate-700 flex items-center gap-1.5">
             <i class="fa-solid fa-heart-pulse text-rose-600"></i> 혈압 추이 (실선: 수축기 / 점선: 이완기)
           </h2>
-          <span class="text-[10px] text-slate-400">시간대별 동시 비교</span>
+          <span class="text-[10px] text-slate-400">버튼 터치로 On/Off</span>
         </div>
-        <div class="flex flex-wrap gap-1.5" id="bp-legend-container"></div>
+        <div class="grid grid-cols-4 gap-1.5" id="bp-legend-container"></div>
         <div class="h-48 pt-1">
           <canvas id="bpChart"></canvas>
         </div>
       </div>
 
-      <!-- 3. 체중 차트: '체중' 글자 없이 [아침, 점심, 저녁, 취침전]만 표기 -->
+      <!-- 3. 체중 차트 -->
       <div class="bg-white p-3.5 rounded-2xl border border-slate-200 shadow-sm space-y-2.5">
         <div class="flex items-center justify-between">
           <h2 class="text-xs font-bold text-slate-700 flex items-center gap-1.5">
@@ -265,7 +259,7 @@
           </h2>
           <span class="text-[10px] text-slate-400">버튼 터치로 On/Off</span>
         </div>
-        <div class="flex flex-wrap gap-1.5" id="weight-legend-container"></div>
+        <div class="grid grid-cols-4 gap-1.5" id="weight-legend-container"></div>
         <div class="h-44 pt-1">
           <canvas id="weightChart"></canvas>
         </div>
@@ -613,44 +607,40 @@
       renderHistory();
     };
 
-    // 일반 1:1 토글 범례 (혈당, 체중에 사용)
-    function buildSimpleLegend(containerId, chartInstance) {
+    // 식전 혈당 보기와 동일한 사각형 탭 버튼 렌더러
+    function buildSquareTabLegend(containerId, chartInstance) {
       const container = document.getElementById(containerId);
       if (!container) return;
       container.innerHTML = '';
 
       chartInstance.data.datasets.forEach((dataset, index) => {
         const isVisible = chartInstance.isDatasetVisible(index);
-        const chip = document.createElement('button');
-        chip.type = 'button';
-        chip.className = `legend-chip ${isVisible ? '' : 'inactive'}`;
-        chip.style.backgroundColor = isVisible ? `${dataset.borderColor}15` : '#f1f5f9';
-        chip.style.borderColor = isVisible ? dataset.borderColor : '#cbd5e1';
-        chip.style.color = isVisible ? dataset.borderColor : '#94a3b8';
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = `tab-toggle-btn ${isVisible ? '' : 'inactive'}`;
+        
+        btn.style.backgroundColor = isVisible ? `${dataset.borderColor}12` : '#f8fafc';
+        btn.style.borderColor = isVisible ? dataset.borderColor : '#e2e8f0';
+        btn.style.color = isVisible ? dataset.borderColor : '#94a3b8';
+        btn.innerText = dataset.label;
 
-        chip.innerHTML = `
-          <span class="dot" style="background-color: ${isVisible ? dataset.borderColor : '#94a3b8'}"></span>
-          <span>${dataset.label}</span>
-        `;
-
-        chip.addEventListener('click', () => {
+        btn.addEventListener('click', () => {
           const currentlyVisible = chartInstance.isDatasetVisible(index);
           chartInstance.setDatasetVisibility(index, !currentlyVisible);
           chartInstance.update();
-          buildSimpleLegend(containerId, chartInstance);
+          buildSquareTabLegend(containerId, chartInstance);
         });
 
-        container.appendChild(chip);
+        container.appendChild(btn);
       });
     }
 
-    // 혈압 전용: 수축기 + 이완기를 '한 쌍'으로 동시 토글하는 범례
-    function buildBloodPressureLegend(containerId, chartInstance) {
+    // 혈압 전용: 수축기+이완기 한 쌍으로 묶는 사각형 탭 버튼 렌더러
+    function buildBloodPressureSquareLegend(containerId, chartInstance) {
       const container = document.getElementById(containerId);
       if (!container) return;
       container.innerHTML = '';
 
-      // 0,1: 아침 / 2,3: 점심 / 4,5: 저녁 / 6,7: 취침전
       const pairs = [
         { label: '아침', sysIdx: 0, diaIdx: 1, color: '#0284c7' },
         { label: '점심', sysIdx: 2, diaIdx: 3, color: '#16a34a' },
@@ -660,32 +650,28 @@
 
       pairs.forEach(p => {
         const isVisible = chartInstance.isDatasetVisible(p.sysIdx);
-        const chip = document.createElement('button');
-        chip.type = 'button';
-        chip.className = `legend-chip ${isVisible ? '' : 'inactive'}`;
-        chip.style.backgroundColor = isVisible ? `${p.color}15` : '#f1f5f9';
-        chip.style.borderColor = isVisible ? p.color : '#cbd5e1';
-        chip.style.color = isVisible ? p.color : '#94a3b8';
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = `tab-toggle-btn ${isVisible ? '' : 'inactive'}`;
+        
+        btn.style.backgroundColor = isVisible ? `${p.color}12` : '#f8fafc';
+        btn.style.borderColor = isVisible ? p.color : '#e2e8f0';
+        btn.style.color = isVisible ? p.color : '#94a3b8';
+        btn.innerText = p.label;
 
-        chip.innerHTML = `
-          <span class="dot" style="background-color: ${isVisible ? p.color : '#94a3b8'}"></span>
-          <span>${p.label}</span>
-        `;
-
-        // 클릭 시 수축기 + 이완기 동시 ON/OFF
-        chip.addEventListener('click', () => {
+        btn.addEventListener('click', () => {
           const nextState = !chartInstance.isDatasetVisible(p.sysIdx);
           chartInstance.setDatasetVisibility(p.sysIdx, nextState);
           chartInstance.setDatasetVisibility(p.diaIdx, nextState);
           chartInstance.update();
-          buildBloodPressureLegend(containerId, chartInstance);
+          buildBloodPressureSquareLegend(containerId, chartInstance);
         });
 
-        container.appendChild(chip);
+        container.appendChild(btn);
       });
     }
 
-    // 1. 혈당 단독 렌더링 (버튼 텍스트: 아침 / 점심 / 저녁 / 취침전)
+    // 1. 혈당 단독 렌더링
     function renderSugarChart() {
       const sorted = [...records].reverse();
       const uniqueDates = Array.from(new Set(sorted.map(r => r.date)));
@@ -729,7 +715,7 @@
           }
         }
       });
-      buildSimpleLegend('sugar-legend-container', charts.sugar);
+      buildSquareTabLegend('sugar-legend-container', charts.sugar);
     }
 
     // 전체 차트 렌더링
@@ -759,35 +745,30 @@
         }
       };
 
-      // 1. 혈당
       renderSugarChart();
 
-      // 2. 혈압 (아침/점심/저녁/취침전 각각 수축기 실선 + 이완기 점선 동시 등록)
+      // 2. 혈압
       if (charts.bp) charts.bp.destroy();
       charts.bp = new Chart(document.getElementById('bpChart'), {
         type: 'line',
         data: {
           labels: xLabels,
           datasets: [
-            // 아침: 0(수축기 실선), 1(이완기 점선)
             { label: '아침 수축기', data: getFieldData('아침', 'bpSys'), borderColor: '#0284c7', backgroundColor: '#0284c7', tension: 0.3, pointRadius: 4 },
             { label: '아침 이완기', data: getFieldData('아침', 'bpDia'), borderColor: '#0284c7', borderDash: [4, 4], backgroundColor: '#0284c7', tension: 0.3, pointRadius: 3.5 },
-            // 점심: 2(수축기 실선), 3(이완기 점선)
             { label: '점심 수축기', data: getFieldData('점심', 'bpSys'), borderColor: '#16a34a', backgroundColor: '#16a34a', tension: 0.3, pointRadius: 4 },
             { label: '점심 이완기', data: getFieldData('점심', 'bpDia'), borderColor: '#16a34a', borderDash: [4, 4], backgroundColor: '#16a34a', tension: 0.3, pointRadius: 3.5 },
-            // 저녁: 4(수축기 실선), 5(이완기 점선)
             { label: '저녁 수축기', data: getFieldData('저녁', 'bpSys'), borderColor: '#e11d48', backgroundColor: '#e11d48', tension: 0.3, pointRadius: 4 },
             { label: '저녁 이완기', data: getFieldData('저녁', 'bpDia'), borderColor: '#e11d48', borderDash: [4, 4], backgroundColor: '#e11d48', tension: 0.3, pointRadius: 3.5 },
-            // 취침전: 6(수축기 실선), 7(이완기 점선)
             { label: '취침전 수축기', data: getFieldData('취침전', 'bpSys'), borderColor: '#7c3aed', backgroundColor: '#7c3aed', tension: 0.3, pointRadius: 4 },
             { label: '취침전 이완기', data: getFieldData('취침전', 'bpDia'), borderColor: '#7c3aed', borderDash: [4, 4], backgroundColor: '#7c3aed', tension: 0.3, pointRadius: 3.5 }
           ]
         },
         options: baseOptions
       });
-      buildBloodPressureLegend('bp-legend-container', charts.bp);
+      buildBloodPressureSquareLegend('bp-legend-container', charts.bp);
 
-      // 3. 체중 (버튼 라벨: 아침 / 점심 / 저녁 / 취침전)
+      // 3. 체중
       if (charts.weight) charts.weight.destroy();
       charts.weight = new Chart(document.getElementById('weightChart'), {
         type: 'line',
@@ -802,7 +783,7 @@
         },
         options: baseOptions
       });
-      buildSimpleLegend('weight-legend-container', charts.weight);
+      buildSquareTabLegend('weight-legend-container', charts.weight);
     }
 
     // 백업: 공유창 1회만 단독 실행
