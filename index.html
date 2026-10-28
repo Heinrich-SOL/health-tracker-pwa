@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>건강 관리 기록</title>
+  <title>나의 건강 관리</title>
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="theme-color" content="#ffffff">
@@ -43,7 +43,7 @@
     .tab-toggle-btn.inactive {
       background-color: #f8fafc !important;
       color: #94a3b8 !important;
-      border-color: #cbd5e1 !important;
+      border-color: #e2e8f0 !important;
       text-decoration: line-through;
       opacity: 0.55;
     }
@@ -60,7 +60,7 @@
         <div class="w-9 h-9 rounded-xl bg-blue-600 flex items-center justify-center text-white shadow-sm shadow-blue-500/30 shrink-0">
           <i class="fa-solid fa-heart-pulse text-base"></i>
         </div>
-        <h1 class="text-lg font-bold tracking-tight text-slate-900" id="page-title">건강 관리 기록</h1>
+        <h1 class="text-lg font-bold tracking-tight text-slate-900" id="page-title">나의 건강 관리</h1>
       </div>
       <span class="text-xs font-bold px-2.5 py-1.5 bg-blue-50 text-blue-700 rounded-full shrink-0" id="header-date">--월 --일</span>
     </header>
@@ -202,12 +202,25 @@
         </div>
       </div>
 
+      <!-- Memo Card -->
+      <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm space-y-2.5">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-1.5 text-sm font-bold text-slate-800">
+            <i class="fa-regular fa-note-sticky text-amber-500"></i> 메모 (선택)
+          </div>
+          <span class="text-xs text-slate-400">식단, 운동, 약 복용 등</span>
+        </div>
+        <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-200">
+          <input type="text" id="record-memo" placeholder="예: 야식 라면, 유산소 40분, 감기약 복용" class="w-full bg-transparent text-sm font-medium text-slate-800 focus:outline-none placeholder-slate-400">
+        </div>
+      </div>
+
       <button id="save-btn" class="w-full py-4 bg-blue-600 hover:bg-blue-700 active:scale-[0.98] text-white font-bold rounded-xl shadow-md shadow-blue-500/20 transition-all text-sm">
         기록 저장하기
       </button>
     </section>
 
-    <!-- TAB 2: Charts (제목과 안내문구를 상하로 분리하여 줄밀림 방지) -->
+    <!-- TAB 2: Charts -->
     <section id="tab-charts" class="space-y-4 hidden">
       
       <!-- 1. 혈당 차트 -->
@@ -425,9 +438,10 @@
       const sugarPre = document.getElementById('sugar-pre').value;
       const sugarPost = document.getElementById('sugar-post').value;
       const weight = document.getElementById('weight').value;
+      const memo = document.getElementById('record-memo').value.trim();
 
-      if (!bpSys && !bpDia && !sugarPre && !sugarPost && !weight) {
-        alert('최소 한 개 이상의 건강 수치를 입력해 주세요.');
+      if (!bpSys && !bpDia && !sugarPre && !sugarPost && !weight && !memo) {
+        alert('최소 한 개 이상의 건강 수치 또는 메모를 입력해 주세요.');
         return;
       }
 
@@ -443,7 +457,8 @@
             pulse: pulse ? Number(pulse) : null,
             sugarPre: sugarPre ? Number(sugarPre) : null,
             sugarPost: sugarPost ? Number(sugarPost) : null,
-            weight: weight ? Number(weight) : null
+            weight: weight ? Number(weight) : null,
+            memo: memo || null
           };
           localStorage.setItem('health_records', JSON.stringify(records));
           alert('기록이 성공적으로 수정되었습니다.');
@@ -459,7 +474,8 @@
           pulse: pulse ? Number(pulse) : null,
           sugarPre: sugarPre ? Number(sugarPre) : null,
           sugarPost: sugarPost ? Number(sugarPost) : null,
-          weight: weight ? Number(weight) : null
+          weight: weight ? Number(weight) : null,
+          memo: memo || null
         };
 
         records.unshift(item);
@@ -478,6 +494,7 @@
       document.getElementById('sugar-pre').value = '';
       document.getElementById('sugar-post').value = '';
       document.getElementById('weight').value = '';
+      document.getElementById('record-memo').value = '';
     }
 
     function resetFormToDefault() {
@@ -504,7 +521,7 @@
         b.classList.toggle('text-slate-400', !isMatch);
       });
 
-      const titles = { 'tab-record': '건강 관리 기록', 'tab-charts': '변화 추이 통계', 'tab-history': '전체 기록 내역', 'tab-settings': '앱 설정 및 백업' };
+      const titles = { 'tab-record': '나의 건강 관리', 'tab-charts': '변화 추이 통계', 'tab-history': '전체 기록 내역', 'tab-settings': '앱 설정 및 백업' };
       document.getElementById('page-title').innerText = titles[tabId];
 
       if (tabId === 'tab-charts') renderCharts();
@@ -544,27 +561,35 @@
         const color = timingColors[r.timing] || timingColors['아침'];
 
         return `
-          <div class="bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
-            <div class="flex-1 pr-2">
-              <div class="flex items-center gap-2 mb-1.5">
+          <div class="bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm space-y-2">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-2">
                 <span class="text-sm font-bold text-slate-800">${r.date} ${r.time}</span>
                 <span class="text-xs px-2 py-0.5 rounded-md ${color.bgClass} ${color.textClass} font-bold border ${color.badgeBorder}">${r.timing}</span>
               </div>
-              <div class="text-xs text-slate-600 flex flex-wrap gap-x-3.5 gap-y-1">
-                ${r.bpSys ? `<span>혈압: <b class="${color.textClass} font-bold text-sm">${r.bpSys}/${r.bpDia}</b></span>` : ''}
-                ${preVal ? `<span>식전: <b class="${color.textClass} font-bold text-sm">${preVal}</b></span>` : ''}
-                ${postVal ? `<span>식후: <b class="${color.textClass} font-bold text-sm">${postVal}</b></span>` : ''}
-                ${r.weight ? `<span>체중: <b class="${color.textClass} font-bold text-sm">${r.weight}kg</b></span>` : ''}
+              <div class="flex items-center gap-1.5 shrink-0">
+                <button onclick="startEditRecord(${r.id})" class="text-slate-400 hover:text-blue-600 p-1.5 rounded-lg active:bg-blue-50" title="수정">
+                  <i class="fa-solid fa-pen text-sm"></i>
+                </button>
+                <button onclick="deleteRecord(${r.id})" class="text-slate-400 hover:text-rose-500 p-1.5 rounded-lg active:bg-rose-50" title="삭제">
+                  <i class="fa-solid fa-trash-can text-sm"></i>
+                </button>
               </div>
             </div>
-            <div class="flex items-center gap-1.5 shrink-0">
-              <button onclick="startEditRecord(${r.id})" class="text-slate-400 hover:text-blue-600 p-2 rounded-lg active:bg-blue-50" title="수정">
-                <i class="fa-solid fa-pen text-sm"></i>
-              </button>
-              <button onclick="deleteRecord(${r.id})" class="text-slate-400 hover:text-rose-500 p-2 rounded-lg active:bg-rose-50" title="삭제">
-                <i class="fa-solid fa-trash-can text-sm"></i>
-              </button>
+
+            <div class="text-xs text-slate-600 flex flex-wrap gap-x-3.5 gap-y-1">
+              ${r.bpSys ? `<span>혈압: <b class="${color.textClass} font-bold text-sm">${r.bpSys}/${r.bpDia}</b></span>` : ''}
+              ${preVal ? `<span>식전: <b class="${color.textClass} font-bold text-sm">${preVal}</b></span>` : ''}
+              ${postVal ? `<span>식후: <b class="${color.textClass} font-bold text-sm">${postVal}</b></span>` : ''}
+              ${r.weight ? `<span>체중: <b class="${color.textClass} font-bold text-sm">${r.weight}kg</b></span>` : ''}
             </div>
+
+            ${r.memo ? `
+              <div class="pt-1 border-t border-slate-100 flex items-start gap-1.5 text-xs text-slate-600">
+                <i class="fa-regular fa-note-sticky text-amber-500 mt-0.5 shrink-0"></i>
+                <span class="leading-relaxed bg-amber-50/60 px-2 py-0.5 rounded-md text-slate-700 w-full">${r.memo}</span>
+              </div>
+            ` : ''}
           </div>
         `;
       }).join('');
@@ -590,6 +615,7 @@
       document.getElementById('sugar-post').value = postVal || '';
 
       document.getElementById('weight').value = item.weight || '';
+      document.getElementById('record-memo').value = item.memo || '';
 
       document.getElementById('edit-mode-banner').classList.remove('hidden');
       const saveBtn = document.getElementById('save-btn');
@@ -684,7 +710,6 @@
       clip: false
     };
 
-    // 1. 혈당 차트 렌더링
     function renderSugarChart() {
       const sorted = [...records].reverse();
       const uniqueDates = Array.from(new Set(sorted.map(r => r.date)));
@@ -735,7 +760,6 @@
       buildSquareTabLegend('sugar-legend-container', charts.sugar);
     }
 
-    // 전체 차트 렌더링
     function renderCharts() {
       const sorted = [...records].reverse();
       const uniqueDates = Array.from(new Set(sorted.map(r => r.date)));
@@ -807,7 +831,7 @@
       buildSquareTabLegend('weight-legend-container', charts.weight);
     }
 
-    // 백업: 공유창 1회 단독 실행
+    // 백업: 공유창 1회만 단독 실행
     document.getElementById('backup-share-btn').addEventListener('click', async () => {
       const dataStr = JSON.stringify(records, null, 2);
       const filename = `health_backup_${new Date().toISOString().slice(0,10)}.json`;
@@ -817,8 +841,8 @@
         try {
           await navigator.share({
             files: [file],
-            title: '건강 관리 기록 백업',
-            text: '건강 관리 기록 데이터 백업 파일입니다.'
+            title: '나의 건강 관리 백업',
+            text: '나의 건강 관리 데이터 백업 파일입니다.'
           });
         } catch (e) {}
         return;
