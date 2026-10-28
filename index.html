@@ -108,7 +108,7 @@
           <span class="text-xs font-bold text-slate-600 flex items-center gap-1.5">
             <i class="fa-regular fa-clock text-blue-500"></i> 시간대 선택
           </span>
-          <span class="text-xs font-medium text-blue-600" id="timing-auto-badge">자동 선택됨</span>
+          <span class="text-xs font-medium text-blue-600" id="timing-auto-badge">시간 연동 자동선택됨</span>
         </div>
 
         <div class="grid grid-cols-4 gap-1.5">
@@ -142,7 +142,7 @@
             <span class="text-xs font-semibold text-slate-600 flex items-center gap-1.5">
               <i class="fa-regular fa-clock text-slate-400"></i> 시간
             </span>
-            <span id="time-display" class="text-sm font-bold text-slate-800">오전 08:00</span>
+            <span id="time-display" class="text-sm font-bold text-slate-800">오후 04:25</span>
             <input type="time" id="input-time" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer">
           </div>
         </div>
@@ -512,7 +512,33 @@
       weight: 0
     };
 
-    // 기록을 날짜(YYYY-MM-DD)와 시간(HH:mm) 기준으로 항상 최신순(내림차순) 정렬하는 핵심 함수
+    // 시간 문자열(HH:mm)을 바탕으로 지정해주신 4개 시간대 자동 판정 함수
+    function getTimingByTimeString(timeStr) {
+      if (!timeStr) return '아침';
+      const [hStr, mStr] = timeStr.split(':');
+      const h = parseInt(hStr, 10);
+      const m = parseInt(mStr, 10);
+      const totalMinutes = h * 60 + m;
+
+      // 1. 아침: 새벽 5시 ~ 오전 10시 59분 (05:00 ~ 10:59)
+      if (totalMinutes >= 5 * 60 && totalMinutes < 11 * 60) {
+        return '아침';
+      }
+      // 2. 점심: 오전 11시 ~ 오후 3시 59분 (11:00 ~ 15:59)
+      else if (totalMinutes >= 11 * 60 && totalMinutes < 16 * 60) {
+        return '점심';
+      }
+      // 3. 저녁: 오후 5시 ~ 밤 10시 59분 (17:00 ~ 22:59)
+      //    (오후 4시대(16:00~16:59)는 저녁 준비 구간으로 저녁에 자동 배정)
+      else if (totalMinutes >= 16 * 60 && totalMinutes < 23 * 60) {
+        return '저녁';
+      }
+      // 4. 취침전: 밤 11시 ~ 새벽 4시 59분 (23:00 ~ 04:59)
+      else {
+        return '취침전';
+      }
+    }
+
     function sortRecordsChronologically() {
       records.sort((a, b) => {
         const timeA = `${a.date} ${a.time || '00:00'}`;
@@ -644,14 +670,6 @@
       }
     });
 
-    function getNowTiming() {
-      const h = new Date().getHours();
-      if (h >= 5 && h < 11) return '아침';
-      if (h >= 11 && h < 16) return '점심';
-      if (h >= 16 && h < 21) return '저녁';
-      return '취침전';
-    }
-
     function updateDateTimeDisplays(dVal, tVal) {
       if (dVal) {
         const parts = dVal.split('-');
@@ -682,7 +700,14 @@
       updateDateTimeDisplays(dStr, tStr);
 
       dateInp.addEventListener('change', (e) => updateDateTimeDisplays(e.target.value, null));
-      timeInp.addEventListener('change', (e) => updateDateTimeDisplays(null, e.target.value));
+      
+      // 시간 입력값이 변경될 때마다 지정된 시간대 기준에 맞춰 자동 선택 실행
+      timeInp.addEventListener('change', (e) => {
+        const newTime = e.target.value;
+        updateDateTimeDisplays(null, newTime);
+        const autoTiming = getTimingByTimeString(newTime);
+        setTiming(autoTiming);
+      });
     }
 
     function setTiming(timing) {
@@ -695,7 +720,7 @@
       });
     }
 
-    // 저장 & 수정 시 항상 날짜/시간 순서로 자동 정렬
+    // 저장 & 수정
     document.getElementById('save-btn').addEventListener('click', () => {
       const date = document.getElementById('input-date').value;
       const time = document.getElementById('input-time').value;
@@ -731,7 +756,7 @@
             bmi: bmiData ? bmiData.bmi : null,
             memo: memo || null
           };
-          sortRecordsChronologically(); // 정렬 실행
+          sortRecordsChronologically();
           localStorage.setItem('health_records', JSON.stringify(records));
           alert('기록이 성공적으로 수정되었습니다.');
         }
@@ -752,7 +777,7 @@
         };
 
         records.push(item);
-        sortRecordsChronologically(); // 과거 날짜를 입력해도 최신순 자동 정렬
+        sortRecordsChronologically();
         localStorage.setItem('health_records', JSON.stringify(records));
         alert('성공적으로 기록되었습니다.');
         resetFormFields();
@@ -776,7 +801,8 @@
       editingId = null;
       resetFormFields();
       initHeaderDate();
-      setTiming(getNowTiming());
+      const currentInputTime = document.getElementById('input-time').value;
+      setTiming(getTimingByTimeString(currentInputTime));
       document.getElementById('edit-mode-banner').classList.add('hidden');
       document.getElementById('save-btn').innerText = '기록 저장하기';
       document.getElementById('save-btn').className = 'w-full py-4 bg-blue-600 hover:bg-blue-700 active:scale-[0.98] text-white font-bold rounded-xl shadow-md shadow-blue-500/20 transition-all text-sm';
@@ -1055,7 +1081,6 @@
       }
     };
 
-    // 차트 X축용 날짜 추출 (과거 -> 최신 오름차순 정렬)
     function getFilteredDates(days) {
       const dates = Array.from(new Set(records.map(r => r.date))).sort();
       if (days > 0 && dates.length > days) {
@@ -1466,7 +1491,7 @@
         const parsed = JSON.parse(jsonString);
         if (Array.isArray(parsed)) {
           records = parsed;
-          sortRecordsChronologically(); // 복원된 데이터 정렬
+          sortRecordsChronologically();
           localStorage.setItem('health_records', JSON.stringify(records));
           alert(`성공적으로 ${records.length}건의 기록이 복원되었습니다.`);
           renderHistory();
@@ -1492,9 +1517,10 @@
       }
     });
 
-    sortRecordsChronologically(); // 시작 시 기존 데이터 정렬
+    sortRecordsChronologically();
     initHeaderDate();
-    setTiming(getNowTiming());
+    const initTime = document.getElementById('input-time').value;
+    setTiming(getTimingByTimeString(initTime));
     updateUserHeightDisplay();
     document.querySelectorAll('.timing-btn').forEach(b => b.addEventListener('click', () => setTiming(b.dataset.timing)));
   </script>
