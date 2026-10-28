@@ -256,7 +256,7 @@
       </button>
     </section>
 
-    <!-- TAB 2: Charts (방해되는 선 제거, Y축 세로눈금 전용 컬러 마킹 적용) -->
+    <!-- TAB 2: Charts (정상 복구 & 충돌 제거 버전) -->
     <section id="tab-charts" class="space-y-4 hidden">
       
       <!-- 1. 혈당 차트 -->
@@ -268,7 +268,6 @@
             </h2>
             <span class="text-[11px] text-slate-400 mt-0.5 block">시간대별 터치로 켜고 끄기</span>
           </div>
-          <!-- 기준 수치 안내 뱃지 -->
           <span id="sugar-target-badge" class="text-[11px] font-bold px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200">
             정상기준 100
           </span>
@@ -475,7 +474,9 @@
   </div>
 
   <script>
-    Chart.register(ChartDataLabels);
+    if (typeof ChartDataLabels !== 'undefined') {
+      Chart.register(ChartDataLabels);
+    }
 
     let records = JSON.parse(localStorage.getItem('health_records') || '[]');
     let userHeight = parseFloat(localStorage.getItem('user_height_cm')) || null;
@@ -901,6 +902,8 @@
       container.innerHTML = '';
 
       chartInstance.data.datasets.forEach((dataset, index) => {
+        if (dataset.isGuideLine) return;
+
         const isVisible = chartInstance.isDatasetVisible(index);
         const btn = document.createElement('button');
         btn.type = 'button';
@@ -957,21 +960,27 @@
       });
     }
 
-    // 측정 수치 겹침 방지 및 13px 굵은 라벨
+    // 측정 수치 라벨 겹침 방지 (display: 'auto', 기준선 숨김)
     const highLegibilityDataLabels = {
       align: 'top',
       anchor: 'end',
       offset: 6,
       font: { size: 13, weight: '800' },
       color: (ctx) => ctx.dataset.borderColor,
-      formatter: (value) => (value !== null && value !== undefined) ? value : '',
+      formatter: (value, ctx) => {
+        if (ctx.dataset.isGuideLine) return '';
+        return (value !== null && value !== undefined) ? value : '';
+      },
       backgroundColor: 'rgba(255, 255, 255, 0.94)',
       borderRadius: 6,
       borderWidth: 1.5,
       borderColor: (ctx) => `${ctx.dataset.borderColor}60`,
       padding: { top: 2, bottom: 2, left: 5, right: 5 },
       clip: false,
-      display: 'auto' // 가까워서 겹칠 것 같으면 똑똑하게 우선순위 표시
+      display: (ctx) => {
+        if (ctx.dataset.isGuideLine) return false;
+        return 'auto';
+      }
     };
 
     function getFilteredDates(days) {
@@ -983,7 +992,7 @@
       return uniqueDates;
     }
 
-    // 1. 혈당 차트 (차트 내부 가로선 완전 제거 + Y축 세로눈금 전용 컬러 하이라이트)
+    // 1. 혈당 차트 (안전하고 깔끔한 기준선 분리 렌더링)
     function renderSugarChart() {
       const sorted = [...records].reverse();
       const dates = getFilteredDates(selectedRanges.sugar);
@@ -1002,26 +1011,39 @@
       };
 
       const targetVal = currentSugarMode === 'pre' ? 100 : 140;
+      const targetColor = currentSugarMode === 'pre' ? '#10b981' : '#f59e0b';
+      const targetTitle = currentSugarMode === 'pre' ? '식전 정상 100' : '식후 정상 140';
+
+      const datasets = [
+        { label: '아침', data: getSugarData('아침', currentSugarMode), borderColor: '#0284c7', backgroundColor: '#0284c7', tension: 0.3, pointStyle: 'rectRounded', pointRadius: 6, pointHoverRadius: 8 },
+        { label: '점심', data: getSugarData('점심', currentSugarMode), borderColor: '#16a34a', backgroundColor: '#16a34a', tension: 0.3, pointStyle: 'rectRounded', pointRadius: 6, pointHoverRadius: 8 },
+        { label: '저녁', data: getSugarData('저녁', currentSugarMode), borderColor: '#e11d48', backgroundColor: '#e11d48', tension: 0.3, pointStyle: 'rectRounded', pointRadius: 6, pointHoverRadius: 8 },
+        { label: '취침전', data: getSugarData('취침전', currentSugarMode), borderColor: '#7c3aed', backgroundColor: '#7c3aed', tension: 0.3, pointStyle: 'rectRounded', pointRadius: 6, pointHoverRadius: 8 }
+      ];
+
+      // 정상 기준선 (데이터와 겹치지 않는 얇은 점선)
+      if (dates.length > 0) {
+        datasets.push({
+          label: targetTitle,
+          data: dates.map(() => targetVal),
+          borderColor: targetColor,
+          borderWidth: 1.5,
+          borderDash: [6, 6],
+          pointRadius: 0,
+          fill: false,
+          isGuideLine: true
+        });
+      }
 
       if (charts.sugar) charts.sugar.destroy();
       charts.sugar = new Chart(document.getElementById('sugarChart'), {
         type: 'line',
-        data: {
-          labels: xLabels,
-          datasets: [
-            { label: '아침', data: getSugarData('아침', currentSugarMode), borderColor: '#0284c7', backgroundColor: '#0284c7', tension: 0.3, pointStyle: 'rectRounded', pointRadius: 6, pointHoverRadius: 8 },
-            { label: '점심', data: getSugarData('점심', currentSugarMode), borderColor: '#16a34a', backgroundColor: '#16a34a', tension: 0.3, pointStyle: 'rectRounded', pointRadius: 6, pointHoverRadius: 8 },
-            { label: '저녁', data: getSugarData('저녁', currentSugarMode), borderColor: '#e11d48', backgroundColor: '#e11d48', tension: 0.3, pointStyle: 'rectRounded', pointRadius: 6, pointHoverRadius: 8 },
-            { label: '취침전', data: getSugarData('취침전', currentSugarMode), borderColor: '#7c3aed', backgroundColor: '#7c3aed', tension: 0.3, pointStyle: 'rectRounded', pointRadius: 6, pointHoverRadius: 8 }
-          ]
-        },
+        data: { labels: xLabels, datasets },
         options: {
           responsive: true,
           maintainAspectRatio: false,
           spanGaps: true,
-          layout: {
-            padding: { top: 35, bottom: 5, left: 10, right: 15 }
-          },
+          layout: { padding: { top: 35, bottom: 5, left: 10, right: 15 } },
           plugins: {
             legend: { display: false },
             tooltip: { callbacks: { title: (items) => `${dates[items[0].dataIndex]}` } },
@@ -1029,27 +1051,14 @@
           },
           scales: {
             x: { ticks: { font: { size: 12, weight: '700' }, maxRotation: 45 } },
-            y: {
-              ticks: {
-                font: (context) => {
-                  // 기준 수치 눈금만 굵게 강조
-                  const isTarget = Math.abs(context.tick.value - targetVal) < 10;
-                  return { size: isTarget ? 13 : 11, weight: isTarget ? '900' : '600' };
-                },
-                color: (context) => {
-                  // 기준 수치 눈금만 컬러 마킹
-                  return Math.abs(context.tick.value - targetVal) < 10 ? (currentSugarMode === 'pre' ? '#059669' : '#d97706') : '#64748b';
-                }
-              },
-              grace: '25%'
-            }
+            y: { ticks: { font: { size: 12, weight: '700' } }, grace: '25%' }
           }
         }
       });
       buildSquareTabLegend('sugar-legend-container', charts.sugar);
     }
 
-    // 2. 혈압 차트 (차트 내부 가로선 완전 제거 + Y축 120/80 전용 컬러 마킹)
+    // 2. 혈압 차트 (안전하고 깔끔한 기준선 분리 렌더링)
     function renderBpChart() {
       const sorted = [...records].reverse();
       const dates = getFilteredDates(selectedRanges.bp);
@@ -1062,29 +1071,51 @@
         });
       };
 
+      const datasets = [
+        { label: '아침 수축기', data: getFieldData('아침', 'bpSys'), borderColor: '#0284c7', backgroundColor: '#0284c7', tension: 0.3, pointStyle: 'rectRounded', pointRadius: 6, pointHoverRadius: 8 },
+        { label: '아침 이완기', data: getFieldData('아침', 'bpDia'), borderColor: '#0284c7', borderDash: [4, 4], backgroundColor: '#0284c7', tension: 0.3, pointStyle: 'rectRounded', pointRadius: 5, pointHoverRadius: 7 },
+        { label: '점심 수축기', data: getFieldData('점심', 'bpSys'), borderColor: '#16a34a', backgroundColor: '#16a34a', tension: 0.3, pointStyle: 'rectRounded', pointRadius: 6, pointHoverRadius: 8 },
+        { label: '점심 이완기', data: getFieldData('점심', 'bpDia'), borderColor: '#16a34a', borderDash: [4, 4], backgroundColor: '#16a34a', tension: 0.3, pointStyle: 'rectRounded', pointRadius: 5, pointHoverRadius: 7 },
+        { label: '저녁 수축기', data: getFieldData('저녁', 'bpSys'), borderColor: '#e11d48', backgroundColor: '#e11d48', tension: 0.3, pointStyle: 'rectRounded', pointRadius: 6, pointHoverRadius: 8 },
+        { label: '저녁 이완기', data: getFieldData('저녁', 'bpDia'), borderColor: '#e11d48', borderDash: [4, 4], backgroundColor: '#e11d48', tension: 0.3, pointStyle: 'rectRounded', pointRadius: 5, pointHoverRadius: 7 },
+        { label: '취침전 수축기', data: getFieldData('취침전', 'bpSys'), borderColor: '#7c3aed', backgroundColor: '#7c3aed', tension: 0.3, pointStyle: 'rectRounded', pointRadius: 6, pointHoverRadius: 8 },
+        { label: '취침전 이완기', data: getFieldData('취침전', 'bpDia'), borderColor: '#7c3aed', borderDash: [4, 4], backgroundColor: '#7c3aed', tension: 0.3, pointStyle: 'rectRounded', pointRadius: 5, pointHoverRadius: 7 }
+      ];
+
+      if (dates.length > 0) {
+        datasets.push(
+          {
+            label: '수축기 정상 120',
+            data: dates.map(() => 120),
+            borderColor: '#f43f5e',
+            borderWidth: 1.5,
+            borderDash: [6, 6],
+            pointRadius: 0,
+            fill: false,
+            isGuideLine: true
+          },
+          {
+            label: '이완기 정상 80',
+            data: dates.map(() => 80),
+            borderColor: '#38bdf8',
+            borderWidth: 1.5,
+            borderDash: [6, 6],
+            pointRadius: 0,
+            fill: false,
+            isGuideLine: true
+          }
+        );
+      }
+
       if (charts.bp) charts.bp.destroy();
       charts.bp = new Chart(document.getElementById('bpChart'), {
         type: 'line',
-        data: {
-          labels: xLabels,
-          datasets: [
-            { label: '아침 수축기', data: getFieldData('아침', 'bpSys'), borderColor: '#0284c7', backgroundColor: '#0284c7', tension: 0.3, pointStyle: 'rectRounded', pointRadius: 6, pointHoverRadius: 8 },
-            { label: '아침 이완기', data: getFieldData('아침', 'bpDia'), borderColor: '#0284c7', borderDash: [4, 4], backgroundColor: '#0284c7', tension: 0.3, pointStyle: 'rectRounded', pointRadius: 5, pointHoverRadius: 7 },
-            { label: '점심 수축기', data: getFieldData('점심', 'bpSys'), borderColor: '#16a34a', backgroundColor: '#16a34a', tension: 0.3, pointStyle: 'rectRounded', pointRadius: 6, pointHoverRadius: 8 },
-            { label: '점심 이완기', data: getFieldData('점심', 'bpDia'), borderColor: '#16a34a', borderDash: [4, 4], backgroundColor: '#16a34a', tension: 0.3, pointStyle: 'rectRounded', pointRadius: 5, pointHoverRadius: 7 },
-            { label: '저녁 수축기', data: getFieldData('저녁', 'bpSys'), borderColor: '#e11d48', backgroundColor: '#e11d48', tension: 0.3, pointStyle: 'rectRounded', pointRadius: 6, pointHoverRadius: 8 },
-            { label: '저녁 이완기', data: getFieldData('저녁', 'bpDia'), borderColor: '#e11d48', borderDash: [4, 4], backgroundColor: '#e11d48', tension: 0.3, pointStyle: 'rectRounded', pointRadius: 5, pointHoverRadius: 7 },
-            { label: '취침전 수축기', data: getFieldData('취침전', 'bpSys'), borderColor: '#7c3aed', backgroundColor: '#7c3aed', tension: 0.3, pointStyle: 'rectRounded', pointRadius: 6, pointHoverRadius: 8 },
-            { label: '취침전 이완기', data: getFieldData('취침전', 'bpDia'), borderColor: '#7c3aed', borderDash: [4, 4], backgroundColor: '#7c3aed', tension: 0.3, pointStyle: 'rectRounded', pointRadius: 5, pointHoverRadius: 7 }
-          ]
-        },
+        data: { labels: xLabels, datasets },
         options: {
           responsive: true,
           maintainAspectRatio: false,
           spanGaps: true,
-          layout: {
-            padding: { top: 35, bottom: 5, left: 10, right: 15 }
-          },
+          layout: { padding: { top: 35, bottom: 5, left: 10, right: 15 } },
           plugins: {
             legend: { display: false },
             tooltip: { callbacks: { title: (items) => `${dates[items[0].dataIndex]}` } },
@@ -1092,29 +1123,14 @@
           },
           scales: {
             x: { ticks: { font: { size: 12, weight: '700' }, maxRotation: 45 } },
-            y: {
-              ticks: {
-                font: (context) => {
-                  const val = context.tick.value;
-                  const isTarget = Math.abs(val - 120) < 5 || Math.abs(val - 80) < 5;
-                  return { size: isTarget ? 13 : 11, weight: isTarget ? '900' : '600' };
-                },
-                color: (context) => {
-                  const val = context.tick.value;
-                  if (Math.abs(val - 120) < 5) return '#e11d48'; // 수축기 120 빨간색 강조
-                  if (Math.abs(val - 80) < 5) return '#0284c7';  // 이완기 80 파란색 강조
-                  return '#64748b';
-                }
-              },
-              grace: '25%'
-            }
+            y: { ticks: { font: { size: 12, weight: '700' } }, grace: '25%' }
           }
         }
       });
       buildBloodPressureSquareLegend('bp-legend-container', charts.bp);
     }
 
-    // 3. 체중 & BMI 차트 (차트 내부 가로선 완전 제거 + 전용 뱃지 및 Y축 마킹)
+    // 3. 체중 & BMI 차트
     function renderWeightChart() {
       const sorted = [...records].reverse();
       const dates = getFilteredDates(selectedRanges.weight);
@@ -1141,20 +1157,56 @@
         { label: '취침전', data: getVal('취침전'), borderColor: '#7c3aed', backgroundColor: '#7c3aed', tension: 0.3, pointStyle: 'rectRounded', pointRadius: 6, pointHoverRadius: 8 }
       ];
 
+      if (dates.length > 0) {
+        if (currentWeightMode === 'kg') {
+          if (userHeight) {
+            const normalWeightMax = Math.round(23 * (userHeight / 100) * (userHeight / 100) * 10) / 10;
+            datasets.push({
+              label: `정상체중 (${normalWeightMax}kg)`,
+              data: dates.map(() => normalWeightMax),
+              borderColor: '#10b981',
+              borderWidth: 1.5,
+              borderDash: [6, 6],
+              pointRadius: 0,
+              fill: false,
+              isGuideLine: true
+            });
+          }
+        } else {
+          datasets.push(
+            {
+              label: '과체중선 (BMI 23)',
+              data: dates.map(() => 23),
+              borderColor: '#f59e0b',
+              borderWidth: 1.5,
+              borderDash: [6, 6],
+              pointRadius: 0,
+              fill: false,
+              isGuideLine: true
+            },
+            {
+              label: '비만선 (BMI 25)',
+              data: dates.map(() => 25),
+              borderColor: '#ef4444',
+              borderWidth: 1.5,
+              borderDash: [6, 6],
+              pointRadius: 0,
+              fill: false,
+              isGuideLine: true
+            }
+          );
+        }
+      }
+
       if (charts.weight) charts.weight.destroy();
       charts.weight = new Chart(document.getElementById('weightChart'), {
         type: 'line',
-        data: {
-          labels: xLabels,
-          datasets
-        },
+        data: { labels: xLabels, datasets },
         options: {
           responsive: true,
           maintainAspectRatio: false,
           spanGaps: true,
-          layout: {
-            padding: { top: 35, bottom: 5, left: 10, right: 15 }
-          },
+          layout: { padding: { top: 35, bottom: 5, left: 10, right: 15 } },
           plugins: {
             legend: { display: false },
             tooltip: { callbacks: { title: (items) => `${dates[items[0].dataIndex]}` } },
@@ -1162,25 +1214,7 @@
           },
           scales: {
             x: { ticks: { font: { size: 12, weight: '700' }, maxRotation: 45 } },
-            y: {
-              ticks: {
-                font: (context) => {
-                  if (currentWeightMode === 'bmi') {
-                    const isBmiMark = Math.abs(context.tick.value - 23) < 1 || Math.abs(context.tick.value - 25) < 1;
-                    return { size: isBmiMark ? 13 : 11, weight: isBmiMark ? '900' : '600' };
-                  }
-                  return { size: 11, weight: '600' };
-                },
-                color: (context) => {
-                  if (currentWeightMode === 'bmi') {
-                    if (Math.abs(context.tick.value - 23) < 1) return '#d97706'; // 과체중 23 주황
-                    if (Math.abs(context.tick.value - 25) < 1) return '#dc2626'; // 비만 25 빨강
-                  }
-                  return '#64748b';
-                }
-              },
-              grace: '25%'
-            }
+            y: { ticks: { font: { size: 12, weight: '700' } }, grace: '25%' }
           }
         }
       });
