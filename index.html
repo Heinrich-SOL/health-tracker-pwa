@@ -207,16 +207,16 @@
       </button>
     </section>
 
-    <!-- TAB 2: Charts -->
+    <!-- TAB 2: Charts (제목과 안내문구를 상하로 분리하여 줄밀림 방지) -->
     <section id="tab-charts" class="space-y-4 hidden">
       
       <!-- 1. 혈당 차트 -->
-      <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm space-y-3">
-        <div class="flex items-center justify-between">
+      <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm space-y-2.5">
+        <div>
           <h2 class="text-sm font-bold text-slate-800 flex items-center gap-1.5">
             <i class="fa-solid fa-chart-line text-emerald-600"></i> 혈당 변화 추이 (mg/dL)
           </h2>
-          <span class="text-xs text-slate-400">버튼 터치로 On/Off</span>
+          <span class="text-[11px] text-slate-400 mt-0.5 block">버튼 터치로 켜고 끄기</span>
         </div>
 
         <div class="grid grid-cols-2 gap-1.5 p-1 bg-slate-100 rounded-xl border border-slate-200">
@@ -228,7 +228,7 @@
           </button>
         </div>
 
-        <div class="grid grid-cols-4 gap-1.5" id="sugar-legend-container"></div>
+        <div class="grid grid-cols-4 gap-1.5 pt-1" id="sugar-legend-container"></div>
         
         <div class="h-64 pt-2">
           <canvas id="sugarChart"></canvas>
@@ -236,35 +236,35 @@
       </div>
 
       <!-- 2. 혈압 차트 -->
-      <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm space-y-3">
-        <div class="flex items-center justify-between">
+      <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm space-y-2.5">
+        <div>
           <h2 class="text-sm font-bold text-slate-800 flex items-center gap-1.5">
             <i class="fa-solid fa-heart-pulse text-rose-600"></i> 혈압 추이 (실선: 수축기 / 점선: 이완기)
           </h2>
-          <span class="text-xs text-slate-400">버튼 터치로 On/Off</span>
+          <span class="text-[11px] text-slate-400 mt-0.5 block">시간대별 버튼 터치로 켜고 끄기</span>
         </div>
-        <div class="grid grid-cols-4 gap-1.5" id="bp-legend-container"></div>
+        <div class="grid grid-cols-4 gap-1.5 pt-1" id="bp-legend-container"></div>
         <div class="h-64 pt-2">
           <canvas id="bpChart"></canvas>
         </div>
       </div>
 
       <!-- 3. 체중 차트 -->
-      <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm space-y-3">
-        <div class="flex items-center justify-between">
+      <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm space-y-2.5">
+        <div>
           <h2 class="text-sm font-bold text-slate-800 flex items-center gap-1.5">
             <i class="fa-solid fa-weight-scale text-indigo-600"></i> 체중 변화 추이 (kg)
           </h2>
-          <span class="text-xs text-slate-400">버튼 터치로 On/Off</span>
+          <span class="text-[11px] text-slate-400 mt-0.5 block">시간대별 버튼 터치로 켜고 끄기</span>
         </div>
-        <div class="grid grid-cols-4 gap-1.5" id="weight-legend-container"></div>
+        <div class="grid grid-cols-4 gap-1.5 pt-1" id="weight-legend-container"></div>
         <div class="h-56 pt-2">
           <canvas id="weightChart"></canvas>
         </div>
       </div>
     </section>
 
-    <!-- TAB 3: History (글자 크기 및 가독성 대폭 향상) -->
+    <!-- TAB 3: History -->
     <section id="tab-history" class="space-y-2.5 hidden">
       <div class="flex justify-between items-center px-1">
         <span class="text-sm font-bold text-slate-600">최근 기록 내역</span>
@@ -314,7 +314,7 @@
     </section>
   </main>
 
-  <!-- Bottom Navigation (글자 및 아이콘 크기 확대) -->
+  <!-- Bottom Navigation -->
   <nav class="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-md border-t border-slate-200 safe-bottom z-50">
     <div class="max-w-sm mx-auto grid grid-cols-4 py-2 px-1">
       <button class="nav-btn flex flex-col items-center gap-1 py-1 text-blue-600" data-tab="tab-record">
@@ -669,7 +669,6 @@
       });
     }
 
-    // 가독성 극대화 Datalabels 설정 (13px Heavy Bold + 선명한 뱃지)
     const highLegibilityDataLabels = {
       align: 'top',
       anchor: 'end',
