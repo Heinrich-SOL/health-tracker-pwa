@@ -27,6 +27,32 @@
     input[type="number"] { -moz-appearance: textfield; }
     .safe-top { padding-top: env(safe-area-inset-top, 20px); }
     .safe-bottom { padding-bottom: env(safe-area-inset-bottom, 20px); }
+
+    /* 커스텀 범례 토글 버튼 스타일 */
+    .legend-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 6px 10px;
+      border-radius: 9999px;
+      font-size: 11px;
+      font-weight: 700;
+      transition: all 0.15s ease-in-out;
+      border: 1.5px solid transparent;
+      cursor: pointer;
+    }
+    .legend-chip.inactive {
+      background-color: #f1f5f9 !important;
+      color: #94a3b8 !important;
+      border-color: #cbd5e1 !important;
+      text-decoration: line-through;
+      opacity: 0.6;
+    }
+    .legend-chip .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 9999px;
+    }
   </style>
 </head>
 <body class="bg-slate-100 text-slate-800 antialiased min-h-screen flex flex-col justify-between overflow-x-hidden">
@@ -141,18 +167,29 @@
       <div class="bg-white p-3.5 rounded-2xl border border-slate-200 shadow-sm space-y-2.5">
         <div class="flex items-center justify-between">
           <div class="flex items-center gap-1.5 text-xs font-bold text-slate-700">
-            <span class="w-2 h-2 rounded-full bg-emerald-500"></span> 혈당
+            <span class="w-2 h-2 rounded-full bg-emerald-500"></span> 혈당 (mg/dL)
           </div>
-          <div class="flex bg-slate-100 p-0.5 rounded-lg border border-slate-200">
-            <button type="button" class="sugar-type-btn px-2 py-0.5 text-[10px] font-bold rounded transition-all" data-type="식전">식전</button>
-            <button type="button" class="sugar-type-btn px-2 py-0.5 text-[10px] font-bold rounded transition-all" data-type="식후 2시간">식후 2시간</button>
-          </div>
+          <span class="text-[10px] text-slate-400">정상: 식전 ~100 / 식후 ~140</span>
         </div>
-        <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-200 flex items-center justify-between px-3">
-          <span class="text-xs font-semibold text-slate-500">혈당 수치</span>
-          <div class="flex items-baseline gap-1">
-            <input type="number" id="blood-sugar" placeholder="100" inputmode="numeric" class="w-16 text-right text-base font-bold text-slate-900 bg-transparent focus:outline-none p-0">
-            <span class="text-xs text-slate-400 font-medium">mg/dL</span>
+
+        <div class="space-y-1.5">
+          <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-200 flex items-center justify-between px-3">
+            <span class="text-xs font-semibold text-slate-600 flex items-center gap-1.5">
+              <span class="w-1.5 h-1.5 rounded-full bg-sky-500"></span> 식전 혈당
+            </span>
+            <div class="flex items-baseline gap-1">
+              <input type="number" id="sugar-pre" placeholder="100" inputmode="numeric" class="w-16 text-right text-base font-bold text-slate-900 bg-transparent focus:outline-none p-0">
+              <span class="text-xs text-slate-400 font-medium">mg/dL</span>
+            </div>
+          </div>
+          <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-200 flex items-center justify-between px-3">
+            <span class="text-xs font-semibold text-slate-600 flex items-center gap-1.5">
+              <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> 식후 혈당 (2시간)
+            </span>
+            <div class="flex items-baseline gap-1">
+              <input type="number" id="sugar-post" placeholder="130" inputmode="numeric" class="w-16 text-right text-base font-bold text-slate-900 bg-transparent focus:outline-none p-0">
+              <span class="text-xs text-slate-400 font-medium">mg/dL</span>
+            </div>
           </div>
         </div>
       </div>
@@ -176,38 +213,49 @@
       </button>
     </section>
 
-    <!-- TAB 2: Charts -->
-    <section id="tab-charts" class="space-y-3.5 hidden">
-      <div class="px-1 text-[11px] text-slate-400">
-        * 상단 범례(아침/점심/저녁)를 누르면 특정 선만 켜고 끌 수 있습니다.
-      </div>
-
-      <!-- 혈당 차트 -->
-      <div class="bg-white p-3.5 rounded-2xl border border-slate-200 shadow-sm">
-        <h2 class="text-xs font-bold text-slate-700 mb-2.5 flex items-center gap-1.5">
-          <i class="fa-solid fa-chart-line text-emerald-600"></i> 시간대별 혈당 변화 (mg/dL)
-        </h2>
-        <div class="h-52">
+    <!-- TAB 2: Charts (큼직한 터치 토글 범례 적용) -->
+    <section id="tab-charts" class="space-y-4 hidden">
+      <!-- 1. 혈당 차트 -->
+      <div class="bg-white p-3.5 rounded-2xl border border-slate-200 shadow-sm space-y-2.5">
+        <div class="flex items-center justify-between">
+          <h2 class="text-xs font-bold text-slate-700 flex items-center gap-1.5">
+            <i class="fa-solid fa-chart-line text-emerald-600"></i> 혈당 변화 추이 (mg/dL)
+          </h2>
+          <span class="text-[10px] text-slate-400">버튼 터치로 켜고 끄기</span>
+        </div>
+        <!-- 큼직한 알약형 범례 토글 버튼 -->
+        <div class="flex flex-wrap gap-1.5" id="sugar-legend-container"></div>
+        <div class="h-48 pt-1">
           <canvas id="sugarChart"></canvas>
         </div>
       </div>
 
-      <!-- 혈압 차트 -->
-      <div class="bg-white p-3.5 rounded-2xl border border-slate-200 shadow-sm">
-        <h2 class="text-xs font-bold text-slate-700 mb-2.5 flex items-center gap-1.5">
-          <i class="fa-solid fa-heart-pulse text-rose-600"></i> 시간대별 수축기 혈압 (mmHg)
-        </h2>
-        <div class="h-52">
+      <!-- 2. 혈압 차트 -->
+      <div class="bg-white p-3.5 rounded-2xl border border-slate-200 shadow-sm space-y-2.5">
+        <div class="flex items-center justify-between">
+          <h2 class="text-xs font-bold text-slate-700 flex items-center gap-1.5">
+            <i class="fa-solid fa-heart-pulse text-rose-600"></i> 시간대별 수축기 혈압 (mmHg)
+          </h2>
+          <span class="text-[10px] text-slate-400">버튼 터치로 켜고 끄기</span>
+        </div>
+        <!-- 큼직한 알약형 범례 토글 버튼 -->
+        <div class="flex flex-wrap gap-1.5" id="bp-legend-container"></div>
+        <div class="h-48 pt-1">
           <canvas id="bpChart"></canvas>
         </div>
       </div>
 
-      <!-- 체중 차트 -->
-      <div class="bg-white p-3.5 rounded-2xl border border-slate-200 shadow-sm">
-        <h2 class="text-xs font-bold text-slate-700 mb-2.5 flex items-center gap-1.5">
-          <i class="fa-solid fa-weight-scale text-indigo-600"></i> 체중 변화 추이 (kg)
-        </h2>
-        <div class="h-44">
+      <!-- 3. 체중 차트 -->
+      <div class="bg-white p-3.5 rounded-2xl border border-slate-200 shadow-sm space-y-2.5">
+        <div class="flex items-center justify-between">
+          <h2 class="text-xs font-bold text-slate-700 flex items-center gap-1.5">
+            <i class="fa-solid fa-weight-scale text-indigo-600"></i> 체중 변화 추이 (kg)
+          </h2>
+          <span class="text-[10px] text-slate-400">버튼 터치로 켜고 끄기</span>
+        </div>
+        <!-- 큼직한 알약형 범례 토글 버튼 -->
+        <div class="flex flex-wrap gap-1.5" id="weight-legend-container"></div>
+        <div class="h-44 pt-1">
           <canvas id="weightChart"></canvas>
         </div>
       </div>
@@ -300,7 +348,6 @@
   <script>
     let records = JSON.parse(localStorage.getItem('health_records') || '[]');
     let currentTiming = '아침';
-    let currentSugarType = '식전';
     let editingId = null;
     let charts = {};
 
@@ -355,16 +402,6 @@
       });
     }
 
-    function setSugarType(type) {
-      currentSugarType = type;
-      document.querySelectorAll('.sugar-type-btn').forEach(btn => {
-        const isMatch = btn.dataset.type === type;
-        btn.className = isMatch
-          ? 'sugar-type-btn px-2 py-0.5 text-[10px] font-bold rounded bg-white text-emerald-600 shadow-sm transition-all'
-          : 'sugar-type-btn px-2 py-0.5 text-[10px] font-bold rounded text-slate-400 transition-all';
-      });
-    }
-
     // 저장 & 수정
     document.getElementById('save-btn').addEventListener('click', () => {
       const date = document.getElementById('input-date').value;
@@ -372,10 +409,11 @@
       const bpSys = document.getElementById('bp-sys').value;
       const bpDia = document.getElementById('bp-dia').value;
       const pulse = document.getElementById('pulse').value;
-      const sugar = document.getElementById('blood-sugar').value;
+      const sugarPre = document.getElementById('sugar-pre').value;
+      const sugarPost = document.getElementById('sugar-post').value;
       const weight = document.getElementById('weight').value;
 
-      if (!bpSys && !bpDia && !sugar && !weight) {
+      if (!bpSys && !bpDia && !sugarPre && !sugarPost && !weight) {
         alert('최소 한 개 이상의 건강 수치를 입력해 주세요.');
         return;
       }
@@ -390,8 +428,8 @@
             bpSys: bpSys ? Number(bpSys) : null,
             bpDia: bpDia ? Number(bpDia) : null,
             pulse: pulse ? Number(pulse) : null,
-            sugar: sugar ? Number(sugar) : null,
-            sugarType: sugar ? currentSugarType : null,
+            sugarPre: sugarPre ? Number(sugarPre) : null,
+            sugarPost: sugarPost ? Number(sugarPost) : null,
             weight: weight ? Number(weight) : null
           };
           localStorage.setItem('health_records', JSON.stringify(records));
@@ -406,8 +444,8 @@
           bpSys: bpSys ? Number(bpSys) : null,
           bpDia: bpDia ? Number(bpDia) : null,
           pulse: pulse ? Number(pulse) : null,
-          sugar: sugar ? Number(sugar) : null,
-          sugarType: sugar ? currentSugarType : null,
+          sugarPre: sugarPre ? Number(sugarPre) : null,
+          sugarPost: sugarPost ? Number(sugarPost) : null,
           weight: weight ? Number(weight) : null
         };
 
@@ -424,7 +462,8 @@
       document.getElementById('bp-sys').value = '';
       document.getElementById('bp-dia').value = '';
       document.getElementById('pulse').value = '';
-      document.getElementById('blood-sugar').value = '';
+      document.getElementById('sugar-pre').value = '';
+      document.getElementById('sugar-post').value = '';
       document.getElementById('weight').value = '';
     }
 
@@ -433,7 +472,6 @@
       resetFormFields();
       initHeaderDate();
       setTiming(getNowTiming());
-      setSugarType('식전');
       document.getElementById('edit-mode-banner').classList.add('hidden');
       document.getElementById('save-btn').innerText = '기록 저장하기';
       document.getElementById('save-btn').className = 'w-full py-3.5 bg-blue-600 hover:bg-blue-700 active:scale-[0.98] text-white font-bold rounded-xl shadow-md shadow-blue-500/20 transition-all text-xs';
@@ -472,29 +510,35 @@
         return;
       }
 
-      container.innerHTML = records.map(r => `
-        <div class="bg-white p-3 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
-          <div class="flex-1 pr-2">
-            <div class="flex items-center gap-1.5 mb-1">
-              <span class="text-xs font-bold text-slate-800">${r.date} ${r.time}</span>
-              <span class="text-[10px] px-1.5 py-0.5 rounded bg-blue-50 text-blue-700 font-semibold">${r.timing}</span>
+      container.innerHTML = records.map(r => {
+        const preVal = r.sugarPre !== undefined ? r.sugarPre : (r.sugarType === '식전' ? r.sugar : null);
+        const postVal = r.sugarPost !== undefined ? r.sugarPost : (r.sugarType === '식후 2시간' ? r.sugar : null);
+
+        return `
+          <div class="bg-white p-3 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
+            <div class="flex-1 pr-2">
+              <div class="flex items-center gap-1.5 mb-1">
+                <span class="text-xs font-bold text-slate-800">${r.date} ${r.time}</span>
+                <span class="text-[10px] px-1.5 py-0.5 rounded bg-blue-50 text-blue-700 font-semibold">${r.timing}</span>
+              </div>
+              <div class="text-[11px] text-slate-600 flex flex-wrap gap-x-2.5 gap-y-0.5">
+                ${r.bpSys ? `<span>혈압: <b class="text-slate-800">${r.bpSys}/${r.bpDia}</b></span>` : ''}
+                ${preVal ? `<span>식전: <b class="text-sky-600">${preVal}</b></span>` : ''}
+                ${postVal ? `<span>식후: <b class="text-emerald-600">${postVal}</b></span>` : ''}
+                ${r.weight ? `<span>체중: <b class="text-slate-800">${r.weight}kg</b></span>` : ''}
+              </div>
             </div>
-            <div class="text-[11px] text-slate-600 flex flex-wrap gap-x-2">
-              ${r.bpSys ? `<span>혈압: <b class="text-slate-800">${r.bpSys}/${r.bpDia}</b></span>` : ''}
-              ${r.sugar ? `<span>혈당(${r.sugarType}): <b class="text-slate-800">${r.sugar}</b></span>` : ''}
-              ${r.weight ? `<span>체중: <b class="text-slate-800">${r.weight}kg</b></span>` : ''}
+            <div class="flex items-center gap-1 shrink-0">
+              <button onclick="startEditRecord(${r.id})" class="text-slate-400 hover:text-blue-600 p-1.5 rounded-lg active:bg-blue-50" title="수정">
+                <i class="fa-solid fa-pen text-xs"></i>
+              </button>
+              <button onclick="deleteRecord(${r.id})" class="text-slate-400 hover:text-rose-500 p-1.5 rounded-lg active:bg-rose-50" title="삭제">
+                <i class="fa-solid fa-trash-can text-xs"></i>
+              </button>
             </div>
           </div>
-          <div class="flex items-center gap-1 shrink-0">
-            <button onclick="startEditRecord(${r.id})" class="text-slate-400 hover:text-blue-600 p-1.5 rounded-lg active:bg-blue-50" title="수정">
-              <i class="fa-solid fa-pen text-xs"></i>
-            </button>
-            <button onclick="deleteRecord(${r.id})" class="text-slate-400 hover:text-rose-500 p-1.5 rounded-lg active:bg-rose-50" title="삭제">
-              <i class="fa-solid fa-trash-can text-xs"></i>
-            </button>
-          </div>
-        </div>
-      `).join('');
+        `;
+      }).join('');
     }
 
     window.startEditRecord = function(id) {
@@ -510,8 +554,12 @@
       document.getElementById('bp-sys').value = item.bpSys || '';
       document.getElementById('bp-dia').value = item.bpDia || '';
       document.getElementById('pulse').value = item.pulse || '';
-      document.getElementById('blood-sugar').value = item.sugar || '';
-      if (item.sugarType) setSugarType(item.sugarType);
+
+      const preVal = item.sugarPre !== undefined ? item.sugarPre : (item.sugarType === '식전' ? item.sugar : '');
+      const postVal = item.sugarPost !== undefined ? item.sugarPost : (item.sugarType === '식후 2시간' ? item.sugar : '');
+      document.getElementById('sugar-pre').value = preVal || '';
+      document.getElementById('sugar-post').value = postVal || '';
+
       document.getElementById('weight').value = item.weight || '';
 
       document.getElementById('edit-mode-banner').classList.remove('hidden');
@@ -530,28 +578,69 @@
       renderHistory();
     };
 
+    // === 큼직한 커스텀 터치 범례 생성 헬퍼 함수 ===
+    function buildCustomLegend(containerId, chartInstance) {
+      const container = document.getElementById(containerId);
+      if (!container) return;
+      container.innerHTML = '';
+
+      chartInstance.data.datasets.forEach((dataset, index) => {
+        const isVisible = chartInstance.isDatasetVisible(index);
+        const chip = document.createElement('button');
+        chip.type = 'button';
+        chip.className = `legend-chip ${isVisible ? '' : 'inactive'}`;
+        chip.style.backgroundColor = isVisible ? `${dataset.borderColor}15` : '#f1f5f9';
+        chip.style.borderColor = isVisible ? dataset.borderColor : '#cbd5e1';
+        chip.style.color = isVisible ? dataset.borderColor : '#94a3b8';
+
+        chip.innerHTML = `
+          <span class="dot" style="background-color: ${isVisible ? dataset.borderColor : '#94a3b8'}"></span>
+          <span>${dataset.label}</span>
+        `;
+
+        chip.addEventListener('click', () => {
+          const currentlyVisible = chartInstance.isDatasetVisible(index);
+          chartInstance.setDatasetVisibility(index, !currentlyVisible);
+          chartInstance.update();
+          buildCustomLegend(containerId, chartInstance); // 버튼 상태 UI 동기화
+        });
+
+        container.appendChild(chip);
+      });
+    }
+
     // 차트 렌더링
     function renderCharts() {
       const sorted = [...records].reverse();
       const uniqueDates = Array.from(new Set(sorted.map(r => r.date)));
       const xLabels = uniqueDates.map(d => d.slice(5));
 
-      const getDataByTiming = (timing, field) => {
+      const getSugarData = (timing, type) => {
+        return uniqueDates.map(date => {
+          const found = sorted.find(r => r.date === date && r.timing === timing);
+          if (!found) return null;
+          if (type === 'pre') {
+            return found.sugarPre !== undefined ? found.sugarPre : (found.sugarType === '식전' ? found.sugar : null);
+          } else {
+            return found.sugarPost !== undefined ? found.sugarPost : (found.sugarType === '식후 2시간' ? found.sugar : null);
+          }
+        });
+      };
+
+      const getFieldData = (timing, field) => {
         return uniqueDates.map(date => {
           const found = sorted.find(r => r.date === date && r.timing === timing);
           return found && found[field] !== null ? found[field] : null;
         });
       };
 
+      // 캔버스 내 기본 미니 범례는 숨기고(display: false), 외부 커스텀 범례 사용
       const baseOptions = {
         responsive: true,
         maintainAspectRatio: false,
         spanGaps: true,
         plugins: {
-          legend: {
-            position: 'top',
-            labels: { boxWidth: 10, padding: 8, font: { size: 10, weight: 'bold' } }
-          },
+          legend: { display: false },
           tooltip: {
             callbacks: {
               title: (items) => `${uniqueDates[items[0].dataIndex]}`
@@ -571,14 +660,15 @@
         data: {
           labels: xLabels,
           datasets: [
-            { label: '아침', data: getDataByTiming('아침', 'sugar'), borderColor: '#0284c7', backgroundColor: '#0284c7', tension: 0.3, pointRadius: 3.5 },
-            { label: '점심', data: getDataByTiming('점심', 'sugar'), borderColor: '#16a34a', backgroundColor: '#16a34a', tension: 0.3, pointRadius: 3.5 },
-            { label: '저녁', data: getDataByTiming('저녁', 'sugar'), borderColor: '#e11d48', backgroundColor: '#e11d48', tension: 0.3, pointRadius: 3.5 },
-            { label: '취침전', data: getDataByTiming('취침전', 'sugar'), borderColor: '#7c3aed', backgroundColor: '#7c3aed', tension: 0.3, pointRadius: 3.5 }
+            { label: '아침 식전', data: getSugarData('아침', 'pre'), borderColor: '#0284c7', backgroundColor: '#0284c7', tension: 0.3, pointRadius: 4 },
+            { label: '아침 식후', data: getSugarData('아침', 'post'), borderColor: '#0ea5e9', borderDash: [4, 4], backgroundColor: '#0ea5e9', tension: 0.3, pointRadius: 4 },
+            { label: '점심 식후', data: getSugarData('점심', 'post'), borderColor: '#16a34a', backgroundColor: '#16a34a', tension: 0.3, pointRadius: 4 },
+            { label: '저녁 식후', data: getSugarData('저녁', 'post'), borderColor: '#e11d48', backgroundColor: '#e11d48', tension: 0.3, pointRadius: 4 }
           ]
         },
         options: baseOptions
       });
+      buildCustomLegend('sugar-legend-container', charts.sugar);
 
       // 2. 혈압 차트
       if (charts.bp) charts.bp.destroy();
@@ -587,14 +677,15 @@
         data: {
           labels: xLabels,
           datasets: [
-            { label: '아침 혈압', data: getDataByTiming('아침', 'bpSys'), borderColor: '#0284c7', backgroundColor: '#0284c7', tension: 0.3, pointRadius: 3.5 },
-            { label: '점심 혈압', data: getDataByTiming('점심', 'bpSys'), borderColor: '#16a34a', backgroundColor: '#16a34a', tension: 0.3, pointRadius: 3.5 },
-            { label: '저녁 혈압', data: getDataByTiming('저녁', 'bpSys'), borderColor: '#e11d48', backgroundColor: '#e11d48', tension: 0.3, pointRadius: 3.5 },
-            { label: '취침전', data: getDataByTiming('취침전', 'bpSys'), borderColor: '#7c3aed', backgroundColor: '#7c3aed', tension: 0.3, pointRadius: 3.5 }
+            { label: '아침 혈압', data: getFieldData('아침', 'bpSys'), borderColor: '#0284c7', backgroundColor: '#0284c7', tension: 0.3, pointRadius: 4 },
+            { label: '점심 혈압', data: getFieldData('점심', 'bpSys'), borderColor: '#16a34a', backgroundColor: '#16a34a', tension: 0.3, pointRadius: 4 },
+            { label: '저녁 혈압', data: getFieldData('저녁', 'bpSys'), borderColor: '#e11d48', backgroundColor: '#e11d48', tension: 0.3, pointRadius: 4 },
+            { label: '취침전 혈압', data: getFieldData('취침전', 'bpSys'), borderColor: '#7c3aed', backgroundColor: '#7c3aed', tension: 0.3, pointRadius: 4 }
           ]
         },
         options: baseOptions
       });
+      buildCustomLegend('bp-legend-container', charts.bp);
 
       // 3. 체중 차트
       if (charts.weight) charts.weight.destroy();
@@ -603,21 +694,21 @@
         data: {
           labels: xLabels,
           datasets: [
-            { label: '아침 체중', data: getDataByTiming('아침', 'weight'), borderColor: '#0284c7', backgroundColor: '#0284c7', tension: 0.3, pointRadius: 3.5 },
-            { label: '저녁 체중', data: getDataByTiming('저녁', 'weight'), borderColor: '#e11d48', backgroundColor: '#e11d48', tension: 0.3, pointRadius: 3.5 }
+            { label: '아침 체중', data: getFieldData('아침', 'weight'), borderColor: '#0284c7', backgroundColor: '#0284c7', tension: 0.3, pointRadius: 4 },
+            { label: '저녁 체중', data: getFieldData('저녁', 'weight'), borderColor: '#e11d48', backgroundColor: '#e11d48', tension: 0.3, pointRadius: 4 }
           ]
         },
         options: baseOptions
       });
+      buildCustomLegend('weight-legend-container', charts.weight);
     }
 
-    // === 중복 다운로드 해결: 정확히 1번만 단독 분기 실행 ===
+    // 백업: 공유창 1회만 단독 실행
     document.getElementById('backup-share-btn').addEventListener('click', async () => {
       const dataStr = JSON.stringify(records, null, 2);
       const filename = `health_backup_${new Date().toISOString().slice(0,10)}.json`;
       const file = new File([dataStr], filename, { type: 'application/json' });
 
-      // 1. 모바일 환경(공유 API 지원 시): 오직 공유창만 띄우고 즉시 끝냄
       if (navigator.canShare && navigator.canShare({ files: [file] })) {
         try {
           await navigator.share({
@@ -625,13 +716,10 @@
             title: '건강 관리 기록 백업',
             text: '건강 관리 기록 데이터 백업 파일입니다.'
           });
-        } catch (e) {
-          // 사용자가 공유창 취소 시 조용히 무시
-        }
-        return; 
+        } catch (e) {}
+        return;
       }
 
-      // 2. PC 또는 공유 미지원 브라우저: 오직 일반 파일 다운로드 1회만 실행
       const blob = new Blob([dataStr], { type: 'application/json' });
       const a = document.createElement('a');
       a.href = URL.createObjectURL(blob);
@@ -723,9 +811,7 @@
 
     initHeaderDate();
     setTiming(getNowTiming());
-    setSugarType('식전');
     document.querySelectorAll('.timing-btn').forEach(b => b.addEventListener('click', () => setTiming(b.dataset.timing)));
-    document.querySelectorAll('.sugar-type-btn').forEach(b => b.addEventListener('click', () => setSugarType(b.dataset.type)));
   </script>
 </body>
 </html>
