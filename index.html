@@ -264,7 +264,7 @@
       </button>
     </section>
 
-    <!-- TAB 2: Charts (모든 그래프 반응형 줌인 및 '보기' 단어 제거) -->
+    <!-- TAB 2: Charts -->
     <section id="tab-charts" class="space-y-4 hidden">
       
       <!-- 1. 혈당 차트 -->
@@ -345,21 +345,24 @@
         </div>
       </div>
 
-      <!-- 3. 체중 & BMI 차트 ('보기' 제거) -->
+      <!-- 3. 체중 & BMI 차트 (BMI 가이드라인 줄바꿈 배치로 제목 줄밀림 완전 차단) -->
       <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm space-y-2.5">
-        <div class="flex items-center justify-between">
-          <div>
-            <h2 class="text-sm font-bold text-slate-800 flex items-center gap-1.5" id="weight-chart-title">
-              <i class="fa-solid fa-weight-scale text-indigo-600"></i> 체중 변화 추이 (kg)
-            </h2>
-            <span class="text-[11px] text-slate-400 mt-0.5 block">시간대별 터치로 켜고 끄기</span>
+        <div>
+          <h2 class="text-sm font-bold text-slate-800 flex items-center gap-1.5" id="weight-chart-title">
+            <i class="fa-solid fa-weight-scale text-indigo-600"></i> 체중 변화 추이 (kg)
+          </h2>
+          
+          <!-- 한 줄 아래로 내려 터치 안내와 가이드라인 뱃지를 깔끔하게 정돈 -->
+          <div class="flex items-center justify-between mt-1">
+            <span class="text-[11px] text-slate-400">시간대별 터치로 켜고 끄기</span>
+            <div id="weight-target-container" class="flex items-center gap-1">
+              <span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-indigo-50 text-indigo-700 border border-indigo-200">
+                정상 BMI 18.5~22.9
+              </span>
+            </div>
           </div>
-          <span id="weight-target-badge" class="text-[11px] font-bold px-2 py-0.5 rounded bg-indigo-50 text-indigo-700 border border-indigo-200">
-            정상 BMI 18.5~22.9
-          </span>
         </div>
 
-        <!-- 체중 (kg) / BMI 스위치 버튼 -->
         <div class="grid grid-cols-2 gap-1.5 p-1 bg-slate-100 rounded-xl border border-slate-200">
           <button type="button" id="weight-mode-kg" class="py-2.5 text-xs font-bold rounded-lg transition-all bg-white text-indigo-600 shadow-sm">
             체중 (kg)
@@ -794,7 +797,7 @@
       btn.addEventListener('click', () => switchTab(btn.dataset.tab));
     });
 
-    // 식전 / 식후 스위치 버튼 ('보기' 단어 제거)
+    // 식전 / 식후 스위치 버튼
     document.getElementById('sugar-mode-pre').addEventListener('click', () => {
       currentSugarMode = 'pre';
       document.getElementById('sugar-mode-pre').className = 'py-2.5 text-xs font-bold rounded-lg transition-all bg-white text-sky-600 shadow-sm';
@@ -811,13 +814,19 @@
       renderSugarChart();
     });
 
-    // 체중 / BMI 스위치 버튼 ('보기' 단어 제거)
+    // 체중 / BMI 스위치 버튼 (가이드라인 뱃지 동적 전환)
     document.getElementById('weight-mode-kg').addEventListener('click', () => {
       currentWeightMode = 'kg';
       document.getElementById('weight-mode-kg').className = 'py-2.5 text-xs font-bold rounded-lg transition-all bg-white text-indigo-600 shadow-sm';
       document.getElementById('weight-mode-bmi').className = 'py-2.5 text-xs font-bold rounded-lg transition-all text-slate-500';
       document.getElementById('weight-chart-title').innerHTML = `<i class="fa-solid fa-weight-scale text-indigo-600"></i> 체중 변화 추이 (kg)`;
-      document.getElementById('weight-target-badge').innerText = '정상 BMI 18.5~22.9';
+      
+      // 체중 모드 가이드라인 뱃지
+      document.getElementById('weight-target-container').innerHTML = `
+        <span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-indigo-50 text-indigo-700 border border-indigo-200">
+          정상 BMI 18.5~22.9
+        </span>
+      `;
       renderWeightChart();
     });
 
@@ -831,7 +840,19 @@
       document.getElementById('weight-mode-bmi').className = 'py-2.5 text-xs font-bold rounded-lg transition-all bg-white text-indigo-600 shadow-sm';
       document.getElementById('weight-mode-kg').className = 'py-2.5 text-xs font-bold rounded-lg transition-all text-slate-500';
       document.getElementById('weight-chart-title').innerHTML = `<i class="fa-solid fa-gauge text-indigo-600"></i> BMI 지수 변화 추이`;
-      document.getElementById('weight-target-badge').innerText = '정상 22.9 이하 / 과체중 23~ / 비만 25~';
+      
+      // BMI 모드 가이드라인: 줄밀림 없이 콤팩트한 뱃지들로 분리 표시
+      document.getElementById('weight-target-container').innerHTML = `
+        <span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200">
+          정상 ~22.9
+        </span>
+        <span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-50 text-amber-700 border border-amber-200">
+          과체중 23~
+        </span>
+        <span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-rose-50 text-rose-700 border border-rose-200">
+          비만 25~
+        </span>
+      `;
       renderWeightChart();
     });
 
@@ -851,7 +872,6 @@
       });
     });
 
-    // 내역 화면 렌더링
     function renderHistory() {
       const container = document.getElementById('history-list');
       document.getElementById('record-count').innerText = `${records.length}건`;
@@ -1036,7 +1056,6 @@
       return uniqueDates;
     }
 
-    // 반응형 가로 스크롤 폭 계산 (데이터가 많아져도 라벨 간격 확보)
     function adjustBoxWidth(boxId, count) {
       const box = document.getElementById(boxId);
       if (!box) return;
@@ -1049,7 +1068,7 @@
       }
     }
 
-    // 1. 혈당 차트 (동적 반응형 줌인 적용)
+    // 1. 혈당 차트
     function renderSugarChart() {
       const sorted = [...records].reverse();
       const dates = getFilteredDates(selectedRanges.sugar);
@@ -1083,7 +1102,6 @@
         { label: '취침전', data: getSugarData('취침전', currentSugarMode), borderColor: '#7c3aed', backgroundColor: '#7c3aed', tension: 0.25, pointStyle: 'rectRounded', pointRadius: 5.5, pointHoverRadius: 7 }
       ];
 
-      // 혈당 Y축 동적 줌인
       let dynamicMin = undefined;
       let dynamicMax = undefined;
       if (allValues.length > 0) {
@@ -1135,7 +1153,7 @@
       buildSquareTabLegend('sugar-legend-container', charts.sugar);
     }
 
-    // 2. 혈압 차트 (동적 반응형 줌인 적용)
+    // 2. 혈압 차트
     function renderBpChart() {
       const sorted = [...records].reverse();
       const dates = getFilteredDates(selectedRanges.bp);
@@ -1163,7 +1181,6 @@
         { label: '취침전 이완기', data: getFieldData('취침전', 'bpDia'), borderColor: '#c084fc', borderDash: [4, 4], backgroundColor: '#c084fc', tension: 0.25, pointStyle: 'rectRounded', pointRadius: 4.5, pointHoverRadius: 6 }
       ];
 
-      // 혈압 Y축 동적 줌인
       let dynamicMin = undefined;
       let dynamicMax = undefined;
       if (allValues.length > 0) {
@@ -1227,14 +1244,14 @@
       buildBloodPressureSquareLegend('bp-legend-container', charts.bp);
     }
 
-    // 3. 체중 & BMI 차트 (동적 반응형 줌인)
+    // 3. 체중 & BMI 차트
     function renderWeightChart() {
       const sorted = [...records].reverse();
       const dates = getFilteredDates(selectedRanges.weight);
       const xLabels = dates.map(d => d.slice(5));
       adjustBoxWidth('weight-chart-box', dates.length);
 
-      const allValues = [];
+      const realDataValues = [];
       const getVal = (timing) => {
         return dates.map(date => {
           const found = sorted.find(r => r.date === date && r.timing === timing);
@@ -1247,7 +1264,7 @@
             const res = calculateBmi(found.weight, userHeight);
             val = res ? res.bmi : null;
           }
-          if (val !== null) allValues.push(val);
+          if (val !== null) realDataValues.push(val);
           return val;
         });
       };
@@ -1261,19 +1278,23 @@
 
       let dynamicMin = undefined;
       let dynamicMax = undefined;
-      if (allValues.length > 0) {
-        const minVal = Math.min(...allValues);
-        const maxVal = Math.max(...allValues);
+      let yStep = undefined;
+
+      if (realDataValues.length > 0) {
+        const minVal = Math.min(...realDataValues);
+        const maxVal = Math.max(...realDataValues);
         const diff = maxVal - minVal;
-        
+
         if (currentWeightMode === 'kg') {
-          const pad = diff <= 4 ? 3 : Math.ceil(diff * 0.35);
+          const pad = diff <= 4 ? 2.5 : Math.ceil(diff * 0.3);
           dynamicMin = Math.max(0, Math.floor(minVal - pad));
           dynamicMax = Math.ceil(maxVal + pad);
+          yStep = 1;
         } else {
-          const pad = diff <= 2 ? 1.5 : diff * 0.3;
+          const pad = diff <= 1.5 ? 0.8 : diff * 0.3;
           dynamicMin = Math.max(10, Math.floor((minVal - pad) * 10) / 10);
           dynamicMax = Math.ceil((maxVal + pad) * 10) / 10;
+          yStep = 0.2;
         }
       }
 
@@ -1281,7 +1302,7 @@
         if (currentWeightMode === 'kg') {
           if (userHeight) {
             const normalWeightMax = Math.round(23 * (userHeight / 100) * (userHeight / 100) * 10) / 10;
-            if (!dynamicMin || (normalWeightMax >= dynamicMin - 5 && normalWeightMax <= dynamicMax + 5)) {
+            if (dynamicMin === undefined || (normalWeightMax >= dynamicMin && normalWeightMax <= dynamicMax)) {
               datasets.push({
                 label: `정상체중 (${normalWeightMax}kg)`,
                 data: dates.map(() => normalWeightMax),
@@ -1295,8 +1316,8 @@
             }
           }
         } else {
-          datasets.push(
-            {
+          if (dynamicMin === undefined || (23 >= dynamicMin && 23 <= dynamicMax)) {
+            datasets.push({
               label: '과체중 (23)',
               data: dates.map(() => 23),
               borderColor: '#f59e0b',
@@ -1305,8 +1326,10 @@
               pointRadius: 0,
               fill: false,
               isGuideLine: true
-            },
-            {
+            });
+          }
+          if (dynamicMin === undefined || (25 >= dynamicMin && 25 <= dynamicMax)) {
+            datasets.push({
               label: '비만 (25)',
               data: dates.map(() => 25),
               borderColor: '#ef4444',
@@ -1315,8 +1338,8 @@
               pointRadius: 0,
               fill: false,
               isGuideLine: true
-            }
-          );
+            });
+          }
         }
       }
 
@@ -1337,11 +1360,12 @@
           scales: {
             x: { ticks: { font: { size: 11, weight: '700' } } },
             y: {
-              suggestedMin: dynamicMin,
-              suggestedMax: dynamicMax,
+              min: dynamicMin,
+              max: dynamicMax,
               ticks: {
-                stepSize: currentWeightMode === 'kg' ? 1 : 0.5,
-                font: { size: 11, weight: '700' }
+                stepSize: yStep,
+                font: { size: 11, weight: '700' },
+                callback: (val) => currentWeightMode === 'bmi' ? Number(val).toFixed(1) : val
               }
             }
           }
