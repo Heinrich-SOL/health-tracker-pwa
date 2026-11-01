@@ -1,0 +1,1967 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>나의 건강 관리</title>
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="theme-color" content="#ffffff">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    body {
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      overflow-x: hidden !important;
+      width: 100%;
+    }
+    input[type="number"]::-webkit-inner-spin-button,
+    input[type="number"]::-webkit-outer-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+    input[type="number"] { -moz-appearance: textfield; }
+    .safe-top { padding-top: env(safe-area-inset-top, 20px); }
+    .safe-bottom { padding-bottom: env(safe-area-inset-bottom, 20px); }
+
+    .tab-toggle-btn {
+      width: 100%;
+      padding: 9px 4px;
+      border-radius: 10px;
+      font-size: 13px;
+      font-weight: 700;
+      text-align: center;
+      transition: all 0.15s ease-in-out;
+      border: 1.5px solid transparent;
+      cursor: pointer;
+    }
+    .tab-toggle-btn.inactive {
+      background-color: #f8fafc !important;
+      color: #94a3b8 !important;
+      border-color: #cbd5e1 !important;
+      text-decoration: line-through;
+      opacity: 0.55;
+    }
+
+    .range-btn {
+      padding: 5px 2px;
+      border-radius: 8px;
+      font-size: 11px;
+      font-weight: 700;
+      text-align: center;
+      transition: all 0.15s ease-in-out;
+      border: 1px solid #e2e8f0;
+      background-color: #f8fafc;
+      color: #64748b;
+    }
+    .range-btn.active {
+      background-color: #2563eb;
+      border-color: #2563eb;
+      color: #ffffff;
+      box-shadow: 0 1px 2px rgba(37, 99, 235, 0.2);
+    }
+
+    .chart-scroll-wrap {
+      -webkit-overflow-scrolling: touch;
+    }
+    .chart-scroll-wrap canvas {
+      touch-action: pan-x pan-y;
+    }
+    .chart-scroll-wrap::-webkit-scrollbar {
+      width: 5px;
+      height: 5px;
+    }
+    .chart-scroll-wrap::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 4px;
+    }
+    #zoom-scroll-wrap {
+      overscroll-behavior: contain;
+    }
+    #zoom-scroll-wrap::-webkit-scrollbar {
+      width: 5px;
+      height: 5px;
+    }
+    #zoom-scroll-wrap::-webkit-scrollbar-track {
+      background: rgba(30, 41, 59, 0.4);
+      border-radius: 4px;
+    }
+    #zoom-scroll-wrap::-webkit-scrollbar-thumb {
+      background: #475569;
+      border-radius: 4px;
+    }
+    #zoom-scroll-wrap::-webkit-scrollbar-thumb:hover {
+      background: #64748b;
+    }
+  </style>
+</head>
+<body class="bg-slate-100 text-slate-800 antialiased min-h-screen flex flex-col justify-between overflow-x-hidden">
+
+  <!-- Main Container -->
+  <main class="w-full max-w-sm mx-auto flex-1 flex flex-col px-3.5 safe-top pb-28 overflow-x-hidden">
+    
+    <!-- Header -->
+    <header class="flex items-center justify-between mb-3.5 px-1">
+      <div class="flex items-center space-x-2">
+        <div class="w-9 h-9 rounded-xl bg-blue-600 flex items-center justify-center text-white shadow-sm shadow-blue-500/30 shrink-0">
+          <i class="fa-solid fa-heart-pulse text-base"></i>
+        </div>
+        <h1 class="text-lg font-bold tracking-tight text-slate-900" id="page-title">나의 건강 관리</h1>
+      </div>
+      <span class="text-xs font-bold px-2.5 py-1.5 bg-blue-50 text-blue-700 rounded-full shrink-0" id="header-date">--월 --일</span>
+    </header>
+
+    <!-- TAB 1: Record Input -->
+    <section id="tab-record" class="space-y-3.5">
+      <div id="edit-mode-banner" class="hidden bg-amber-50 border border-amber-200 px-3.5 py-2.5 rounded-xl flex items-center justify-between">
+        <span class="text-sm font-bold text-amber-700 flex items-center gap-1.5">
+          <i class="fa-solid fa-pen text-amber-600"></i> 과거 기록 수정 중
+        </span>
+        <button id="cancel-edit-btn" class="text-xs font-bold text-slate-600 hover:text-slate-900 px-2.5 py-1 rounded bg-white border border-slate-200">
+          취소
+        </button>
+      </div>
+
+      <!-- Timing & Date Card -->
+      <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm space-y-3">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-bold text-slate-600 flex items-center gap-1.5">
+            <i class="fa-regular fa-clock text-blue-500"></i> 시간대 선택
+          </span>
+          <span class="text-xs font-medium text-blue-600" id="timing-auto-badge">시간 연동 자동선택됨</span>
+        </div>
+
+        <div class="grid grid-cols-4 gap-1.5">
+          <button type="button" class="timing-btn flex flex-col items-center justify-center py-2.5 rounded-xl border border-slate-200 text-slate-600 transition-all" data-timing="아침">
+            <i class="fa-solid fa-sun text-sky-500 text-sm mb-1"></i>
+            <span class="text-xs font-bold">아침</span>
+          </button>
+          <button type="button" class="timing-btn flex flex-col items-center justify-center py-2.5 rounded-xl border border-slate-200 text-slate-600 transition-all" data-timing="점심">
+            <i class="fa-solid fa-cloud-sun text-emerald-500 text-sm mb-1"></i>
+            <span class="text-xs font-bold">점심</span>
+          </button>
+          <button type="button" class="timing-btn flex flex-col items-center justify-center py-2.5 rounded-xl border border-slate-200 text-slate-600 transition-all" data-timing="저녁">
+            <i class="fa-solid fa-utensils text-rose-500 text-sm mb-1"></i>
+            <span class="text-xs font-bold">저녁</span>
+          </button>
+          <button type="button" class="timing-btn flex flex-col items-center justify-center py-2.5 rounded-xl border border-slate-200 text-slate-600 transition-all" data-timing="취침전">
+            <i class="fa-solid fa-moon text-purple-500 text-sm mb-1"></i>
+            <span class="text-xs font-bold">취침전</span>
+          </button>
+        </div>
+
+        <div class="space-y-2 pt-1">
+          <div class="relative flex items-center justify-between px-3.5 py-2.5 bg-slate-50 rounded-xl border border-slate-200">
+            <span class="text-xs font-semibold text-slate-600 flex items-center gap-1.5">
+              <i class="fa-regular fa-calendar text-slate-400"></i> 측정일
+            </span>
+            <span id="date-display" class="text-sm font-bold text-slate-800">2026. 10. 28.</span>
+            <input type="date" id="input-date" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer">
+          </div>
+          <div class="relative flex items-center justify-between px-3.5 py-2.5 bg-slate-50 rounded-xl border border-slate-200">
+            <span class="text-xs font-semibold text-slate-600 flex items-center gap-1.5">
+              <i class="fa-regular fa-clock text-slate-400"></i> 시간
+            </span>
+            <span id="time-display" class="text-sm font-bold text-slate-800">오후 04:25</span>
+            <input type="time" id="input-time" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer">
+          </div>
+        </div>
+      </div>
+
+      <!-- Blood Pressure Card -->
+      <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm space-y-3">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-1.5 text-sm font-bold text-slate-800">
+            <span class="w-2.5 h-2.5 rounded-full bg-rose-500"></span> 혈압 및 맥박
+          </div>
+          <button type="button" id="btn-open-bp-popup" class="text-xs font-bold px-2.5 py-1 bg-rose-50 text-rose-600 rounded-lg border border-rose-200 hover:bg-rose-100 flex items-center gap-1 transition-all">
+            <i class="fa-solid fa-calculator text-[11px]"></i> 연속 입력
+          </button>
+        </div>
+        
+        <div class="grid grid-cols-3 gap-2">
+          <div class="bg-slate-50 py-3 px-1 rounded-xl border border-slate-200 flex flex-col items-center justify-center text-center">
+            <span class="text-xs text-slate-500 font-semibold mb-1">수축기 (최고)</span>
+            <div class="flex items-baseline justify-center gap-0.5 w-full">
+              <input type="number" id="bp-sys" placeholder="120" inputmode="numeric" class="w-14 text-center text-xl font-bold text-slate-900 bg-transparent focus:outline-none p-0">
+              <span class="text-xs text-slate-400 font-medium">mmHg</span>
+            </div>
+          </div>
+          <div class="bg-slate-50 py-3 px-1 rounded-xl border border-slate-200 flex flex-col items-center justify-center text-center">
+            <span class="text-xs text-slate-500 font-semibold mb-1">이완기 (최저)</span>
+            <div class="flex items-baseline justify-center gap-0.5 w-full">
+              <input type="number" id="bp-dia" placeholder="80" inputmode="numeric" class="w-14 text-center text-xl font-bold text-slate-900 bg-transparent focus:outline-none p-0">
+              <span class="text-xs text-slate-400 font-medium">mmHg</span>
+            </div>
+          </div>
+          <div class="bg-slate-50 py-3 px-1 rounded-xl border border-slate-200 flex flex-col items-center justify-center text-center">
+            <span class="text-xs text-slate-500 font-semibold mb-1">맥박수</span>
+            <div class="flex items-baseline justify-center gap-0.5 w-full">
+              <input type="number" id="pulse" placeholder="72" inputmode="numeric" class="w-14 text-center text-xl font-bold text-slate-900 bg-transparent focus:outline-none p-0">
+              <span class="text-xs text-slate-400 font-medium">bpm</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Blood Glucose Card -->
+      <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm space-y-3">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-1.5 text-sm font-bold text-slate-800">
+            <span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span> 혈당 (mg/dL)
+          </div>
+          <span class="text-xs text-slate-400">정상: 식전 ~100 / 식후 ~140</span>
+        </div>
+
+        <div class="space-y-2">
+          <div class="bg-slate-50 p-3 rounded-xl border border-slate-200 flex items-center justify-between px-3.5">
+            <span class="text-xs font-bold text-slate-700 flex items-center gap-1.5">
+              <span class="w-2 h-2 rounded-full bg-sky-500"></span> 식전 혈당
+            </span>
+            <div class="flex items-baseline gap-1">
+              <input type="number" id="sugar-pre" placeholder="100" inputmode="numeric" class="w-16 text-right text-xl font-bold text-slate-900 bg-transparent focus:outline-none p-0">
+              <span class="text-xs text-slate-400 font-semibold">mg/dL</span>
+            </div>
+          </div>
+
+          <div class="bg-slate-50 p-3 rounded-xl border border-slate-200 flex items-center justify-between px-3.5">
+            <span class="text-xs font-bold text-slate-700 flex items-center gap-1.5">
+              <span class="w-2 h-2 rounded-full bg-emerald-500"></span> 식후 혈당 (2시간)
+            </span>
+            <div class="flex items-baseline gap-1">
+              <input type="number" id="sugar-post" placeholder="130" inputmode="numeric" class="w-16 text-right text-xl font-bold text-slate-900 bg-transparent focus:outline-none p-0">
+              <span class="text-xs text-slate-400 font-semibold">mg/dL</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Weight Card -->
+      <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm space-y-3">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-1.5 text-sm font-bold text-slate-800">
+            <span class="w-2.5 h-2.5 rounded-full bg-indigo-500"></span> 몸무게 & BMI
+          </div>
+          <button type="button" id="btn-quick-height" class="text-xs font-semibold text-blue-600 bg-blue-50 hover:bg-blue-100 px-2.5 py-1 rounded-lg flex items-center gap-1 transition-colors">
+            <i class="fa-solid fa-ruler-vertical text-[10px]"></i>
+            <span id="label-user-height">키 미설정</span>
+          </button>
+        </div>
+
+        <div class="bg-slate-50 p-3 rounded-xl border border-slate-200 flex items-center justify-between px-3.5">
+          <span class="text-xs font-bold text-slate-700">현재 체중</span>
+          <div class="flex items-baseline gap-1">
+            <input type="number" id="weight" step="0.1" placeholder="70.0" inputmode="decimal" class="w-16 text-right text-xl font-bold text-slate-900 bg-transparent focus:outline-none p-0">
+            <span class="text-xs text-slate-400 font-semibold">kg</span>
+          </div>
+        </div>
+
+        <div id="bmi-display-banner" class="hidden bg-indigo-50/70 border border-indigo-100 px-3.5 py-2.5 rounded-xl flex items-center justify-between">
+          <div class="flex items-center gap-1.5">
+            <i class="fa-solid fa-gauge text-indigo-600 text-xs"></i>
+            <span class="text-xs font-bold text-slate-700">BMI 지수</span>
+            <span id="bmi-value-text" class="text-sm font-extrabold text-indigo-700 ml-1">23.4</span>
+          </div>
+          <span id="bmi-badge" class="text-xs font-bold px-2 py-0.5 rounded-md bg-white border border-indigo-200 text-indigo-600">
+            정상
+          </span>
+        </div>
+      </div>
+
+      <!-- Memo Card -->
+      <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm space-y-2.5">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-1.5 text-sm font-bold text-slate-800">
+            <i class="fa-regular fa-note-sticky text-amber-500"></i> 메모 (선택)
+          </div>
+          <span class="text-xs text-slate-400">식단, 운동, 약 복용 등</span>
+        </div>
+        <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-200">
+          <input type="text" id="record-memo" placeholder="예: 야식 라면, 유산소 40분, 감기약 복용" class="w-full bg-transparent text-sm font-medium text-slate-800 focus:outline-none placeholder-slate-400">
+        </div>
+      </div>
+
+      <button id="save-btn" class="w-full py-4 bg-blue-600 hover:bg-blue-700 active:scale-[0.98] text-white font-bold rounded-xl shadow-md shadow-blue-500/20 transition-all text-sm">
+        기록 저장하기
+      </button>
+    </section>
+
+    <!-- TAB 2: Charts -->
+    <section id="tab-charts" class="space-y-4 hidden">
+      
+      <!-- 1. 혈당 차트 -->
+      <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm space-y-2.5">
+        <div class="flex items-center justify-between">
+          <div>
+            <h2 class="text-sm font-bold text-slate-800 flex items-center gap-1.5">
+              <i class="fa-solid fa-chart-line text-emerald-600"></i> 혈당 변화 추이 (mg/dL)
+            </h2>
+            <span class="text-[11px] text-slate-400 mt-0.5 block">시간대별 터치로 켜고 끄기</span>
+          </div>
+          <div class="flex items-center gap-1.5">
+            <span id="sugar-target-badge" class="text-[11px] font-bold px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200">
+              정상기준 100
+            </span>
+            <button type="button" onclick="openZoomChart('sugar')" class="w-7 h-7 flex items-center justify-center rounded-lg bg-slate-50 text-slate-500 hover:text-blue-600 active:bg-blue-50 border border-slate-200 transition-all" title="그래프 확대">
+              <i class="fa-solid fa-expand text-xs"></i>
+            </button>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-1.5 p-1 bg-slate-100 rounded-xl border border-slate-200">
+          <button type="button" id="sugar-mode-pre" class="py-2.5 text-xs font-bold rounded-lg transition-all bg-white text-sky-600 shadow-sm">
+            식전 혈당
+          </button>
+          <button type="button" id="sugar-mode-post" class="py-2.5 text-xs font-bold rounded-lg transition-all text-slate-500">
+            식후 혈당
+          </button>
+        </div>
+
+        <div class="grid grid-cols-4 gap-1.5 pt-1" id="sugar-legend-container"></div>
+        
+        <div class="chart-scroll-wrap overflow-x-auto overflow-y-hidden pt-2">
+          <div class="h-64 pr-4" id="sugar-chart-box" style="min-width: 100%;">
+            <canvas id="sugarChart"></canvas>
+          </div>
+        </div>
+
+        <div class="pt-2 border-t border-slate-100">
+          <div class="grid grid-cols-4 gap-1 range-group" data-target="sugar">
+            <button type="button" class="range-btn" data-days="7">최근 7일</button>
+            <button type="button" class="range-btn" data-days="14">최근 14일</button>
+            <button type="button" class="range-btn" data-days="30">최근 30일</button>
+            <button type="button" class="range-btn active" data-days="0">전체</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 2. 혈압 차트 -->
+      <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm space-y-2.5">
+        <div>
+          <div class="flex items-center justify-between">
+            <h2 class="text-sm font-bold text-slate-800 flex items-center gap-1.5">
+              <i class="fa-solid fa-heart-pulse text-rose-600"></i> 혈압 추이 (실선: 수축기 / 점선: 이완기)
+            </h2>
+            <button type="button" onclick="openZoomChart('bp')" class="w-7 h-7 flex items-center justify-center rounded-lg bg-slate-50 text-slate-500 hover:text-blue-600 active:bg-blue-50 border border-slate-200 transition-all" title="그래프 확대">
+              <i class="fa-solid fa-expand text-xs"></i>
+            </button>
+          </div>
+          <div class="flex items-center justify-between mt-1">
+            <span class="text-[11px] text-slate-400">시간대별 터치로 켜고 끄기</span>
+            <div class="flex items-center gap-1">
+              <span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-rose-50 text-rose-600 border border-rose-200">
+                수축기 120
+              </span>
+              <span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-sky-50 text-sky-600 border border-sky-200">
+                이완기 80
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-4 gap-1.5 pt-1" id="bp-legend-container"></div>
+        
+        <div class="chart-scroll-wrap overflow-x-auto overflow-y-hidden pt-2">
+          <div class="h-64 pr-4" id="bp-chart-box" style="min-width: 100%;">
+            <canvas id="bpChart"></canvas>
+          </div>
+        </div>
+
+        <div class="pt-2 border-t border-slate-100">
+          <div class="grid grid-cols-4 gap-1 range-group" data-target="bp">
+            <button type="button" class="range-btn" data-days="7">최근 7일</button>
+            <button type="button" class="range-btn" data-days="14">최근 14일</button>
+            <button type="button" class="range-btn" data-days="30">최근 30일</button>
+            <button type="button" class="range-btn active" data-days="0">전체</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 3. 체중 & BMI 차트 -->
+      <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm space-y-2.5">
+        <div>
+          <div class="flex items-center justify-between">
+            <h2 class="text-sm font-bold text-slate-800 flex items-center gap-1.5" id="weight-chart-title">
+              <i class="fa-solid fa-weight-scale text-indigo-600"></i> 체중 변화 추이 (kg)
+            </h2>
+            <button type="button" onclick="openZoomChart('weight')" class="w-7 h-7 flex items-center justify-center rounded-lg bg-slate-50 text-slate-500 hover:text-blue-600 active:bg-blue-50 border border-slate-200 transition-all" title="그래프 확대">
+              <i class="fa-solid fa-expand text-xs"></i>
+            </button>
+          </div>
+          
+          <div class="flex items-center justify-between mt-1">
+            <span class="text-[11px] text-slate-400">시간대별 터치로 켜고 끄기</span>
+            <div id="weight-target-container" class="flex items-center gap-1">
+              <span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-indigo-50 text-indigo-700 border border-indigo-200">
+                정상 BMI 18.5~22.9
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-1.5 p-1 bg-slate-100 rounded-xl border border-slate-200">
+          <button type="button" id="weight-mode-kg" class="py-2.5 text-xs font-bold rounded-lg transition-all bg-white text-indigo-600 shadow-sm">
+            체중 (kg)
+          </button>
+          <button type="button" id="weight-mode-bmi" class="py-2.5 text-xs font-bold rounded-lg transition-all text-slate-500">
+            BMI
+          </button>
+        </div>
+
+        <div class="grid grid-cols-4 gap-1.5 pt-1" id="weight-legend-container"></div>
+        
+        <div class="chart-scroll-wrap overflow-x-auto overflow-y-hidden pt-2">
+          <div class="h-60 pr-4" id="weight-chart-box" style="min-width: 100%;">
+            <canvas id="weightChart"></canvas>
+          </div>
+        </div>
+
+        <div class="pt-2 border-t border-slate-100">
+          <div class="grid grid-cols-4 gap-1 range-group" data-target="weight">
+            <button type="button" class="range-btn" data-days="7">최근 7일</button>
+            <button type="button" class="range-btn" data-days="14">최근 14일</button>
+            <button type="button" class="range-btn" data-days="30">최근 30일</button>
+            <button type="button" class="range-btn active" data-days="0">전체</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 3: History -->
+    <section id="tab-history" class="space-y-2.5 hidden">
+      <div class="flex justify-between items-center px-1">
+        <span class="text-sm font-bold text-slate-600">최근 기록 내역</span>
+        <span class="text-xs font-semibold text-slate-400" id="record-count">0건</span>
+      </div>
+      <div id="history-list" class="space-y-2.5"></div>
+    </section>
+
+    <!-- TAB 4: Settings -->
+    <section id="tab-settings" class="space-y-3.5 hidden">
+      <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm space-y-3">
+        <h2 class="text-sm font-bold text-slate-800 flex items-center gap-1.5">
+          <i class="fa-solid fa-ruler-vertical text-indigo-600"></i> 기본 신체 정보 (키 고정값)
+        </h2>
+        <p class="text-xs text-slate-500 leading-relaxed">키(cm)를 한 번 입력해 두시면 몸무게 입력 시 BMI가 자동으로 산출됩니다.</p>
+        <div class="flex items-center gap-2 pt-1">
+          <div class="relative flex-1 bg-slate-50 p-2.5 rounded-xl border border-slate-200 flex items-center justify-between px-3">
+            <span class="text-xs font-bold text-slate-600">신장(키)</span>
+            <div class="flex items-baseline gap-1">
+              <input type="number" id="setting-user-height" step="0.1" placeholder="175.0" inputmode="decimal" class="w-16 text-right text-base font-bold text-slate-900 bg-transparent focus:outline-none p-0">
+              <span class="text-xs text-slate-400 font-semibold">cm</span>
+            </div>
+          </div>
+          <button id="btn-save-height" class="py-3 px-4 bg-indigo-600 text-white rounded-xl text-xs font-bold hover:bg-indigo-700 active:scale-95 transition-all">
+            저장
+          </button>
+        </div>
+      </div>
+
+      <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm space-y-3">
+        <h2 class="text-sm font-bold text-slate-800 flex items-center gap-1.5">
+          <i class="fa-solid fa-shield-halved text-blue-600"></i> 데이터 백업
+        </h2>
+        <p class="text-xs text-slate-500 leading-relaxed">아이폰에서는 파일 앱 저장/카톡 공유를 하거나, 텍스트를 복사해 둘 수 있습니다.</p>
+        <div class="grid grid-cols-2 gap-2 pt-1">
+          <button id="backup-share-btn" class="py-3 px-2 bg-blue-50 text-blue-700 active:bg-blue-100 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5">
+            <i class="fa-solid fa-arrow-up-from-bracket"></i> 파일/공유 백업
+          </button>
+          <button id="backup-copy-btn" class="py-3 px-2 bg-slate-100 text-slate-700 active:bg-slate-200 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5">
+            <i class="fa-regular fa-copy"></i> 텍스트 복사
+          </button>
+        </div>
+      </div>
+
+      <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm space-y-3">
+        <h2 class="text-sm font-bold text-slate-800 flex items-center gap-1.5">
+          <i class="fa-solid fa-rotate-left text-emerald-600"></i> 데이터 복원
+        </h2>
+        <p class="text-xs text-slate-500 leading-relaxed">저장해 둔 백업 파일(.json)을 불러오거나 백업 텍스트를 직접 붙여넣어 복원합니다.</p>
+        <div class="grid grid-cols-2 gap-2 pt-1">
+          <label class="py-3 px-2 bg-emerald-50 text-emerald-700 active:bg-emerald-100 rounded-xl text-xs font-bold text-center cursor-pointer flex items-center justify-center gap-1.5">
+            <i class="fa-regular fa-folder-open"></i> 파일 열기
+            <input type="file" id="restore-file" accept=".json,application/json,text/plain" class="hidden">
+          </label>
+          <button id="restore-text-btn" class="py-3 px-2 bg-slate-100 text-slate-700 active:bg-slate-200 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5">
+            <i class="fa-regular fa-paste"></i> 텍스트 붙여넣기
+          </button>
+        </div>
+      </div>
+
+      <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
+        <button id="clear-all-btn" class="w-full py-3 text-xs font-bold text-rose-500 hover:bg-rose-50 rounded-xl transition-colors">
+          전체 기록 초기화
+        </button>
+      </div>
+    </section>
+  </main>
+
+  <!-- Bottom Navigation -->
+  <nav class="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-md border-t border-slate-200 safe-bottom z-50">
+    <div class="max-w-sm mx-auto grid grid-cols-4 py-2 px-1">
+      <button class="nav-btn flex flex-col items-center gap-1 py-1 text-blue-600" data-tab="tab-record">
+        <i class="fa-solid fa-pen-to-square text-lg"></i>
+        <span class="text-xs font-bold">기록</span>
+      </button>
+      <button class="nav-btn flex flex-col items-center gap-1 py-1 text-slate-400" data-tab="tab-charts">
+        <i class="fa-solid fa-chart-line text-lg"></i>
+        <span class="text-xs font-bold">그래프</span>
+      </button>
+      <button class="nav-btn flex flex-col items-center gap-1 py-1 text-slate-400" data-tab="tab-history">
+        <i class="fa-solid fa-list-ul text-lg"></i>
+        <span class="text-xs font-bold">내역</span>
+      </button>
+      <button class="nav-btn flex flex-col items-center gap-1 py-1 text-slate-400" data-tab="tab-settings">
+        <i class="fa-solid fa-gear text-lg"></i>
+        <span class="text-xs font-bold">설정</span>
+      </button>
+    </div>
+  </nav>
+
+  <!-- 텍스트 복원 모달 -->
+  <div id="restore-modal" class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white w-full max-w-xs rounded-2xl p-4 space-y-3">
+      <h3 class="text-sm font-bold text-slate-800">백업 텍스트 붙여넣기</h3>
+      <textarea id="restore-textarea" class="w-full h-32 p-2.5 text-xs font-mono border border-slate-200 rounded-xl focus:outline-none focus:border-blue-500" placeholder="복사해 둔 백업 데이터를 여기에 붙여넣으세요..."></textarea>
+      <div class="grid grid-cols-2 gap-2">
+        <button id="modal-cancel" class="py-2.5 text-xs font-semibold text-slate-600 bg-slate-100 rounded-xl">취소</button>
+        <button id="modal-apply" class="py-2.5 text-xs font-bold text-white bg-blue-600 rounded-xl">복원 실행</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 혈압 연속 입력 팝업 모달 -->
+  <div id="bp-popup-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white w-full max-w-xs rounded-2xl p-4 space-y-3.5 shadow-xl">
+      <div class="flex items-center justify-between pb-1.5 border-b border-slate-100">
+        <div class="flex items-center gap-1.5">
+          <span class="w-2.5 h-2.5 rounded-full bg-rose-500"></span>
+          <h3 class="text-sm font-bold text-slate-900">혈압 및 맥박 연속 입력</h3>
+        </div>
+        <button type="button" id="btn-close-bp-popup" class="text-slate-400 hover:text-slate-600 p-1">
+          <i class="fa-solid fa-xmark text-base"></i>
+        </button>
+      </div>
+
+      <div class="space-y-2.5">
+        <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-200 flex items-center justify-between px-3 focus-within:border-blue-500 focus-within:bg-blue-50/20 transition-all">
+          <span class="text-xs font-bold text-slate-700">1. 수축기 (최고)</span>
+          <div class="flex items-center gap-1.5">
+            <input type="number" id="pop-bp-sys" placeholder="120" inputmode="numeric" class="w-14 text-right text-lg font-extrabold text-slate-900 bg-transparent focus:outline-none p-0">
+            <span class="text-xs text-slate-400 font-semibold mr-1">mmHg</span>
+            <button type="button" id="btn-next-to-dia" class="px-2 py-1 bg-blue-500 text-white text-[11px] font-bold rounded-lg active:scale-95 transition-all">
+              다음
+            </button>
+          </div>
+        </div>
+
+        <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-200 flex items-center justify-between px-3 focus-within:border-blue-500 focus-within:bg-blue-50/20 transition-all">
+          <span class="text-xs font-bold text-slate-700">2. 이완기 (최저)</span>
+          <div class="flex items-center gap-1.5">
+            <input type="number" id="pop-bp-dia" placeholder="80" inputmode="numeric" class="w-14 text-right text-lg font-extrabold text-slate-900 bg-transparent focus:outline-none p-0">
+            <span class="text-xs text-slate-400 font-semibold mr-1">mmHg</span>
+            <button type="button" id="btn-next-to-pulse" class="px-2 py-1 bg-blue-500 text-white text-[11px] font-bold rounded-lg active:scale-95 transition-all">
+              다음
+            </button>
+          </div>
+        </div>
+
+        <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-200 flex items-center justify-between px-3 focus-within:border-blue-500 focus-within:bg-blue-50/20 transition-all">
+          <span class="text-xs font-bold text-slate-700">3. 맥박수</span>
+          <div class="flex items-center gap-1.5">
+            <input type="number" id="pop-pulse" placeholder="72" inputmode="numeric" class="w-14 text-right text-lg font-extrabold text-slate-900 bg-transparent focus:outline-none p-0">
+            <span class="text-xs text-slate-400 font-semibold">bpm</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-2 gap-2 pt-1">
+        <button type="button" id="btn-cancel-bp-popup" class="py-2.5 text-xs font-bold text-slate-600 bg-slate-100 rounded-xl active:bg-slate-200">
+          취소
+        </button>
+        <button type="button" id="btn-apply-bp-popup" class="py-2.5 text-xs font-bold text-white bg-blue-600 rounded-xl active:bg-blue-700 shadow-sm shadow-blue-500/20">
+          적용하기
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 그래프 전체화면 확대 모달 (완벽 반응형 가로/세로 2D 스크롤 및 우측 잘림 방지) -->
+  <div id="zoom-modal" class="fixed inset-0 bg-slate-950 z-[100] flex flex-col justify-between p-3 safe-top safe-bottom hidden">
+    <div>
+      <div class="flex items-center justify-between pb-2 border-b border-slate-800 gap-2">
+        <div class="flex items-center gap-2 shrink-0">
+          <span class="w-2.5 h-2.5 rounded-full bg-blue-500"></span>
+          <h3 id="zoom-modal-title" class="text-sm font-bold text-white tracking-tight">확대 그래프</h3>
+        </div>
+        <div class="flex items-center gap-1.5 shrink-0">
+          <!-- 세로 높이 전환 토글 버튼 (화면 맞춤 vs 세로 확대) -->
+          <div class="inline-flex p-0.5 bg-slate-900 border border-slate-800 rounded-lg text-xs font-semibold">
+            <button type="button" id="btn-zoom-fit" onclick="setZoomHeightMode('fit')" class="px-2 py-1 rounded-md transition-all text-xs text-slate-400 hover:text-slate-200">
+              화면 맞춤
+            </button>
+            <button type="button" id="btn-zoom-tall" onclick="setZoomHeightMode('tall')" class="px-2 py-1 rounded-md transition-all text-xs bg-blue-600 text-white font-bold shadow-sm">
+              세로 확대 ↕
+            </button>
+          </div>
+          <button type="button" onclick="closeZoomChart()" class="w-8 h-8 rounded-full bg-slate-800 text-slate-300 hover:text-white flex items-center justify-center active:scale-95 transition-all shrink-0">
+            <i class="fa-solid fa-xmark text-base"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- 모달 내 식전/식후, 체중/BMI 전환 컨트롤러 -->
+      <div id="zoom-switch-container" class="mt-2 hidden"></div>
+    </div>
+
+    <div class="grid grid-cols-4 gap-1.5 py-1.5" id="zoom-legend-container"></div>
+
+    <!-- 가로 및 세로 양방향(2D) 스크롤 컨테이너 -->
+    <div class="flex-1 w-full min-h-0 my-auto flex flex-col justify-center overflow-hidden">
+      <div id="zoom-scroll-wrap" class="w-full h-full overflow-x-auto overflow-y-auto chart-scroll-wrap py-2">
+        <div id="zoom-chart-box" class="h-[620px] shrink-0 pr-6 transition-all duration-150" style="min-width: 100%;">
+          <canvas id="zoomChart"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <div class="pt-2 border-t border-slate-800 flex items-center justify-between text-xs">
+      <span class="text-[11px] text-slate-500">↔ 가로(날짜) / ↕ 세로(수치) 드래그 스크롤</span>
+      <button type="button" onclick="closeZoomChart()" class="py-1.5 px-5 rounded-xl bg-slate-800 text-slate-200 text-xs font-bold active:scale-95 transition-all">
+        닫기
+      </button>
+    </div>
+  </div>
+
+  <script>
+    if (typeof ChartDataLabels !== 'undefined') {
+      Chart.register(ChartDataLabels);
+    }
+
+    let records = JSON.parse(localStorage.getItem('health_records') || '[]');
+    let userHeight = parseFloat(localStorage.getItem('user_height_cm')) || null;
+    let currentTiming = '아침';
+    let editingId = null;
+    let currentSugarMode = 'pre';
+    let currentWeightMode = 'kg';
+    let charts = {};
+    let currentZoomType = null;
+    let zoomHeightMode = 'tall';
+
+    let selectedRanges = {
+      sugar: 0,
+      bp: 0,
+      weight: 0
+    };
+
+    function getTimingByTimeString(timeStr) {
+      if (!timeStr) return '아침';
+      const [hStr, mStr] = timeStr.split(':');
+      const h = parseInt(hStr, 10);
+      const m = parseInt(mStr, 10);
+      const totalMinutes = h * 60 + m;
+
+      if (totalMinutes >= 5 * 60 && totalMinutes < 11 * 60) {
+        return '아침';
+      } else if (totalMinutes >= 11 * 60 && totalMinutes < 16 * 60) {
+        return '점심';
+      } else if (totalMinutes >= 16 * 60 && totalMinutes < 23 * 60) {
+        return '저녁';
+      } else {
+        return '취침전';
+      }
+    }
+
+    function sortRecordsChronologically() {
+      records.sort((a, b) => {
+        const timeA = `${a.date} ${a.time || '00:00'}`;
+        const timeB = `${b.date} ${b.time || '00:00'}`;
+        return timeB.localeCompare(timeA);
+      });
+    }
+
+    const timingColors = {
+      '아침': { 
+        border: '#0284c7', 
+        diaBorder: '#38bdf8', 
+        textClass: 'text-sky-600', 
+        diaTextClass: 'text-sky-400', 
+        bgClass: 'bg-sky-50', 
+        badgeBorder: 'border-sky-200' 
+      },
+      '점심': { 
+        border: '#16a34a', 
+        diaBorder: '#4ade80', 
+        textClass: 'text-emerald-600', 
+        diaTextClass: 'text-emerald-400', 
+        bgClass: 'bg-emerald-50', 
+        badgeBorder: 'border-emerald-200' 
+      },
+      '저녁': { 
+        border: '#e11d48', 
+        diaBorder: '#fb7185', 
+        textClass: 'text-rose-600', 
+        diaTextClass: 'text-rose-400', 
+        bgClass: 'bg-rose-50', 
+        badgeBorder: 'border-rose-200' 
+      },
+      '취침전': { 
+        border: '#7c3aed', 
+        diaBorder: '#c084fc', 
+        textClass: 'text-purple-600', 
+        diaTextClass: 'text-purple-400', 
+        bgClass: 'bg-purple-50', 
+        badgeBorder: 'border-purple-200' 
+      }
+    };
+
+    function calculateBmi(weightKg, heightCm) {
+      if (!weightKg || !heightCm) return null;
+      const hM = heightCm / 100;
+      const bmi = weightKg / (hM * hM);
+      const rounded = Math.round(bmi * 10) / 10;
+      
+      let status = '정상';
+      let badgeClass = 'text-emerald-700 bg-emerald-50 border-emerald-200';
+      if (rounded < 18.5) {
+        status = '저체중';
+        badgeClass = 'text-sky-700 bg-sky-50 border-sky-200';
+      } else if (rounded >= 18.5 && rounded < 23) {
+        status = '정상';
+        badgeClass = 'text-emerald-700 bg-emerald-50 border-emerald-200';
+      } else if (rounded >= 23 && rounded < 25) {
+        status = '비만전단계(과체중)';
+        badgeClass = 'text-amber-700 bg-amber-50 border-amber-200';
+      } else if (rounded >= 25 && rounded < 30) {
+        status = '1단계 비만';
+        badgeClass = 'text-orange-700 bg-orange-50 border-orange-200';
+      } else {
+        status = '2단계 고도비만';
+        badgeClass = 'text-rose-700 bg-rose-50 border-rose-200';
+      }
+
+      return { bmi: rounded, status, badgeClass };
+    }
+
+    function updateUserHeightDisplay() {
+      const lbl = document.getElementById('label-user-height');
+      const inp = document.getElementById('setting-user-height');
+      if (userHeight) {
+        lbl.innerText = `키: ${userHeight}cm`;
+        inp.value = userHeight;
+      } else {
+        lbl.innerText = '키 미설정';
+        inp.value = '';
+      }
+      updateRealtimeBmi();
+    }
+
+    function updateRealtimeBmi() {
+      const wVal = parseFloat(document.getElementById('weight').value);
+      const banner = document.getElementById('bmi-display-banner');
+      if (wVal && userHeight) {
+        const res = calculateBmi(wVal, userHeight);
+        if (res) {
+          banner.classList.remove('hidden');
+          document.getElementById('bmi-value-text').innerText = res.bmi;
+          const badge = document.getElementById('bmi-badge');
+          badge.innerText = res.status;
+          badge.className = `text-xs font-bold px-2 py-0.5 rounded-md border ${res.badgeClass}`;
+          return;
+        }
+      }
+      banner.classList.add('hidden');
+    }
+
+    document.getElementById('weight').addEventListener('input', updateRealtimeBmi);
+
+    function promptOrSaveHeight(newVal) {
+      if (newVal && !isNaN(newVal) && newVal > 50 && newVal < 250) {
+        userHeight = Math.round(newVal * 10) / 10;
+        localStorage.setItem('user_height_cm', userHeight);
+        updateUserHeightDisplay();
+        renderHistory();
+        renderCharts();
+        return true;
+      }
+      alert('올바른 키(50~250cm)를 입력해 주세요.');
+      return false;
+    }
+
+    document.getElementById('btn-save-height').addEventListener('click', () => {
+      const v = parseFloat(document.getElementById('setting-user-height').value);
+      if (promptOrSaveHeight(v)) {
+        alert(`키가 ${userHeight}cm 로 저장되었습니다. 이제 몸무게 입력 시 BMI가 자동 계산됩니다.`);
+      }
+    });
+
+    document.getElementById('btn-quick-height').addEventListener('click', () => {
+      const current = userHeight || 175;
+      const input = prompt('고정할 본인의 신장(키, cm)을 입력해 주세요:', current);
+      if (input !== null) {
+        promptOrSaveHeight(parseFloat(input));
+      }
+    });
+
+    function updateDateTimeDisplays(dVal, tVal) {
+      if (dVal) {
+        const parts = dVal.split('-');
+        document.getElementById('date-display').innerText = `${parts[0]}. ${parts[1]}. ${parts[2]}.`;
+      }
+      if (tVal) {
+        const [h, m] = tVal.split(':');
+        const numH = parseInt(h, 10);
+        const ampm = numH >= 12 ? '오후' : '오전';
+        const displayH = numH % 12 || 12;
+        document.getElementById('time-display').innerText = `${ampm} ${String(displayH).padStart(2, '0')}:${m}`;
+      }
+    }
+
+    function initHeaderDate() {
+      const now = new Date();
+      const days = ['일', '월', '화', '수', '목', '금', '토'];
+      document.getElementById('header-date').innerText = `${now.getMonth()+1}월 ${now.getDate()}일 (${days[now.getDay()]})`;
+      
+      const pad = n => String(n).padStart(2, '0');
+      const dStr = `${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())}`;
+      const tStr = `${pad(now.getHours())}:${pad(now.getMinutes())}`;
+      
+      const dateInp = document.getElementById('input-date');
+      const timeInp = document.getElementById('input-time');
+      dateInp.value = dStr;
+      timeInp.value = tStr;
+      updateDateTimeDisplays(dStr, tStr);
+
+      dateInp.addEventListener('change', (e) => updateDateTimeDisplays(e.target.value, null));
+      
+      timeInp.addEventListener('change', (e) => {
+        const newTime = e.target.value;
+        updateDateTimeDisplays(null, newTime);
+        const autoTiming = getTimingByTimeString(newTime);
+        setTiming(autoTiming);
+      });
+    }
+
+    function setTiming(timing) {
+      currentTiming = timing;
+      document.querySelectorAll('.timing-btn').forEach(btn => {
+        const isMatch = btn.dataset.timing === timing;
+        btn.className = isMatch 
+          ? 'timing-btn flex flex-col items-center justify-center py-2.5 rounded-xl border-2 border-blue-600 bg-blue-50/50 text-blue-700 transition-all shadow-sm'
+          : 'timing-btn flex flex-col items-center justify-center py-2.5 rounded-xl border border-slate-200 text-slate-600 transition-all';
+      });
+    }
+
+    // === 혈압 팝업 연속 입력 로직 ===
+    const bpModal = document.getElementById('bp-popup-modal');
+    const popSys = document.getElementById('pop-bp-sys');
+    const popDia = document.getElementById('pop-bp-dia');
+    const popPulse = document.getElementById('pop-pulse');
+
+    function openBpPopup() {
+      popSys.value = document.getElementById('bp-sys').value;
+      popDia.value = document.getElementById('bp-dia').value;
+      popPulse.value = document.getElementById('pulse').value;
+      bpModal.classList.remove('hidden');
+      setTimeout(() => popSys.focus(), 60);
+    }
+
+    function closeBpPopup() {
+      bpModal.classList.add('hidden');
+    }
+
+    document.getElementById('btn-open-bp-popup').addEventListener('click', openBpPopup);
+    document.getElementById('btn-close-bp-popup').addEventListener('click', closeBpPopup);
+    document.getElementById('btn-cancel-bp-popup').addEventListener('click', closeBpPopup);
+
+    document.getElementById('btn-next-to-dia').addEventListener('click', () => popDia.focus());
+    document.getElementById('btn-next-to-pulse').addEventListener('click', () => popPulse.focus());
+
+    popSys.addEventListener('input', (e) => {
+      const v = e.target.value;
+      if (v.length >= 3) {
+        popDia.focus();
+      }
+    });
+
+    popDia.addEventListener('input', (e) => {
+      const v = e.target.value;
+      const num = parseInt(v, 10);
+      if (v.length === 2 && num >= 40 && num <= 99) {
+        popPulse.focus();
+      } else if (v.length >= 3) {
+        popPulse.focus();
+      }
+    });
+
+    popSys.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        popDia.focus();
+      }
+    });
+
+    popDia.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        popPulse.focus();
+      }
+    });
+
+    popPulse.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        applyBpPopupValues();
+      }
+    });
+
+    function applyBpPopupValues() {
+      document.getElementById('bp-sys').value = popSys.value;
+      document.getElementById('bp-dia').value = popDia.value;
+      document.getElementById('pulse').value = popPulse.value;
+      closeBpPopup();
+    }
+
+    document.getElementById('btn-apply-bp-popup').addEventListener('click', applyBpPopupValues);
+
+    // 저장 & 수정
+    document.getElementById('save-btn').addEventListener('click', () => {
+      const date = document.getElementById('input-date').value;
+      const time = document.getElementById('input-time').value;
+      const bpSys = document.getElementById('bp-sys').value;
+      const bpDia = document.getElementById('bp-dia').value;
+      const pulse = document.getElementById('pulse').value;
+      const sugarPre = document.getElementById('sugar-pre').value;
+      const sugarPost = document.getElementById('sugar-post').value;
+      const weight = document.getElementById('weight').value;
+      const memo = document.getElementById('record-memo').value.trim();
+
+      if (!bpSys && !bpDia && !sugarPre && !sugarPost && !weight && !memo) {
+        alert('최소 한 개 이상의 건강 수치 또는 메모를 입력해 주세요.');
+        return;
+      }
+
+      const numWeight = weight ? Number(weight) : null;
+      const bmiData = (numWeight && userHeight) ? calculateBmi(numWeight, userHeight) : null;
+
+      if (editingId !== null) {
+        const idx = records.findIndex(r => r.id === editingId);
+        if (idx !== -1) {
+          records[idx] = {
+            ...records[idx],
+            date, time,
+            timing: currentTiming,
+            bpSys: bpSys ? Number(bpSys) : null,
+            bpDia: bpDia ? Number(bpDia) : null,
+            pulse: pulse ? Number(pulse) : null,
+            sugarPre: sugarPre ? Number(sugarPre) : null,
+            sugarPost: sugarPost ? Number(sugarPost) : null,
+            weight: numWeight,
+            bmi: bmiData ? bmiData.bmi : null,
+            memo: memo || null
+          };
+          sortRecordsChronologically();
+          localStorage.setItem('health_records', JSON.stringify(records));
+          alert('기록이 성공적으로 수정되었습니다.');
+        }
+        resetFormToDefault();
+      } else {
+        const item = {
+          id: Date.now(),
+          date, time,
+          timing: currentTiming,
+          bpSys: bpSys ? Number(bpSys) : null,
+          bpDia: bpDia ? Number(bpDia) : null,
+          pulse: pulse ? Number(pulse) : null,
+          sugarPre: sugarPre ? Number(sugarPre) : null,
+          sugarPost: sugarPost ? Number(sugarPost) : null,
+          weight: numWeight,
+          bmi: bmiData ? bmiData.bmi : null,
+          memo: memo || null
+        };
+
+        records.push(item);
+        sortRecordsChronologically();
+        localStorage.setItem('health_records', JSON.stringify(records));
+        alert('성공적으로 기록되었습니다.');
+        resetFormFields();
+      }
+
+      renderHistory();
+    });
+
+    function resetFormFields() {
+      document.getElementById('bp-sys').value = '';
+      document.getElementById('bp-dia').value = '';
+      document.getElementById('pulse').value = '';
+      document.getElementById('sugar-pre').value = '';
+      document.getElementById('sugar-post').value = '';
+      document.getElementById('weight').value = '';
+      document.getElementById('record-memo').value = '';
+      updateRealtimeBmi();
+    }
+
+    function resetFormToDefault() {
+      editingId = null;
+      resetFormFields();
+      initHeaderDate();
+      const currentInputTime = document.getElementById('input-time').value;
+      setTiming(getTimingByTimeString(currentInputTime));
+      document.getElementById('edit-mode-banner').classList.add('hidden');
+      document.getElementById('save-btn').innerText = '기록 저장하기';
+      document.getElementById('save-btn').className = 'w-full py-4 bg-blue-600 hover:bg-blue-700 active:scale-[0.98] text-white font-bold rounded-xl shadow-md shadow-blue-500/20 transition-all text-sm';
+    }
+
+    document.getElementById('cancel-edit-btn').addEventListener('click', () => {
+      resetFormToDefault();
+    });
+
+    function scrollToLatest() {
+      setTimeout(() => {
+        document.querySelectorAll('.chart-scroll-wrap').forEach(wrap => {
+          wrap.scrollLeft = wrap.scrollWidth;
+        });
+      }, 60);
+    }
+
+    function switchTab(tabId) {
+      document.querySelectorAll('main > section').forEach(sec => sec.classList.add('hidden'));
+      document.getElementById(tabId).classList.remove('hidden');
+
+      document.querySelectorAll('.nav-btn').forEach(b => {
+        const isMatch = b.dataset.tab === tabId;
+        b.classList.toggle('text-blue-600', isMatch);
+        b.classList.toggle('text-slate-400', !isMatch);
+      });
+
+      const titles = { 'tab-record': '나의 건강 관리', 'tab-charts': '변화 추이 통계', 'tab-history': '전체 기록 내역', 'tab-settings': '앱 설정 및 백업' };
+      document.getElementById('page-title').innerText = titles[tabId];
+
+      if (tabId === 'tab-charts') {
+        renderCharts();
+        scrollToLatest();
+      }
+      if (tabId === 'tab-history') renderHistory();
+    }
+
+    document.querySelectorAll('.nav-btn').forEach(btn => {
+      btn.addEventListener('click', () => switchTab(btn.dataset.tab));
+    });
+
+    function setSugarMode(mode) {
+      currentSugarMode = mode;
+      const isPre = mode === 'pre';
+      document.getElementById('sugar-mode-pre').className = `py-2.5 text-xs font-bold rounded-lg transition-all ${isPre ? 'bg-white text-sky-600 shadow-sm' : 'text-slate-500'}`;
+      document.getElementById('sugar-mode-post').className = `py-2.5 text-xs font-bold rounded-lg transition-all ${!isPre ? 'bg-white text-emerald-600 shadow-sm' : 'text-slate-500'}`;
+      document.getElementById('sugar-target-badge').innerText = isPre ? '정상기준 100' : '정상기준 140';
+      
+      renderSugarChart();
+      if (currentZoomType === 'sugar') renderZoomChart('sugar');
+      scrollToLatest();
+    }
+
+    document.getElementById('sugar-mode-pre').addEventListener('click', () => setSugarMode('pre'));
+    document.getElementById('sugar-mode-post').addEventListener('click', () => setSugarMode('post'));
+
+    function setWeightMode(mode) {
+      if (mode === 'bmi' && !userHeight) {
+        alert('BMI를 확인하려면 먼저 키를 설정해 주세요.');
+        document.getElementById('btn-quick-height').click();
+        return;
+      }
+      currentWeightMode = mode;
+      const isKg = mode === 'kg';
+      document.getElementById('weight-mode-kg').className = `py-2.5 text-xs font-bold rounded-lg transition-all ${isKg ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500'}`;
+      document.getElementById('weight-mode-bmi').className = `py-2.5 text-xs font-bold rounded-lg transition-all ${!isKg ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500'}`;
+      document.getElementById('weight-chart-title').innerHTML = isKg 
+        ? `<i class="fa-solid fa-weight-scale text-indigo-600"></i> 체중 변화 추이 (kg)`
+        : `<i class="fa-solid fa-gauge text-indigo-600"></i> BMI 지수 변화 추이`;
+      
+      document.getElementById('weight-target-container').innerHTML = isKg ? `
+        <span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-indigo-50 text-indigo-700 border border-indigo-200">
+          정상 BMI 18.5~22.9
+        </span>
+      ` : `
+        <span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200">정상 ~22.9</span>
+        <span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-50 text-amber-700 border border-amber-200">과체중 23~</span>
+        <span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-rose-50 text-rose-700 border border-rose-200">비만 25~</span>
+      `;
+      
+      renderWeightChart();
+      if (currentZoomType === 'weight') renderZoomChart('weight');
+      scrollToLatest();
+    }
+
+    document.getElementById('weight-mode-kg').addEventListener('click', () => setWeightMode('kg'));
+    document.getElementById('weight-mode-bmi').addEventListener('click', () => setWeightMode('bmi'));
+
+    // 기간 필터 버튼 이벤트
+    document.querySelectorAll('.range-group').forEach(group => {
+      const target = group.dataset.target;
+      group.querySelectorAll('.range-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          group.querySelectorAll('.range-btn').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          selectedRanges[target] = parseInt(btn.dataset.days, 10);
+          
+          if (target === 'sugar') renderSugarChart();
+          if (target === 'bp') renderBpChart();
+          if (target === 'weight') renderWeightChart();
+          scrollToLatest();
+        });
+      });
+    });
+
+    function renderHistory() {
+      const container = document.getElementById('history-list');
+      document.getElementById('record-count').innerText = `${records.length}건`;
+      if (records.length === 0) {
+        container.innerHTML = `<div class="p-6 text-center text-xs text-slate-400 bg-white rounded-2xl border border-slate-200">기록된 데이터가 없습니다.</div>`;
+        return;
+      }
+
+      container.innerHTML = records.map(r => {
+        const preVal = r.sugarPre !== undefined ? r.sugarPre : (r.sugarType === '식전' ? r.sugar : null);
+        const postVal = r.sugarPost !== undefined ? r.sugarPost : (r.sugarType === '식후 2시간' ? r.sugar : null);
+        const color = timingColors[r.timing] || timingColors['아침'];
+
+        const bmiInfo = (r.weight && userHeight) ? calculateBmi(r.weight, userHeight) : null;
+
+        return `
+          <div class="bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm space-y-2">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-2">
+                <span class="text-sm font-bold text-slate-800">${r.date} ${r.time}</span>
+                <span class="text-xs px-2 py-0.5 rounded-md ${color.bgClass} ${color.textClass} font-bold border ${color.badgeBorder}">${r.timing}</span>
+              </div>
+              <div class="flex items-center gap-1.5 shrink-0">
+                <button onclick="startEditRecord(${r.id})" class="text-slate-400 hover:text-blue-600 p-1.5 rounded-lg active:bg-blue-50" title="수정">
+                  <i class="fa-solid fa-pen text-sm"></i>
+                </button>
+                <button onclick="deleteRecord(${r.id})" class="text-slate-400 hover:text-rose-500 p-1.5 rounded-lg active:bg-rose-50" title="삭제">
+                  <i class="fa-solid fa-trash-can text-sm"></i>
+                </button>
+              </div>
+            </div>
+
+            <div class="text-xs text-slate-600 flex flex-wrap gap-x-3.5 gap-y-1">
+              ${r.bpSys ? `<span>혈압: <b class="${color.textClass} font-extrabold text-sm">${r.bpSys}</b><span class="text-slate-400 font-bold mx-0.5">/</span><b class="${color.diaTextClass} font-extrabold text-sm">${r.bpDia}</b></span>` : ''}
+              ${preVal ? `<span>식전: <b class="${color.textClass} font-bold text-sm">${preVal}</b></span>` : ''}
+              ${postVal ? `<span>식후: <b class="${color.textClass} font-bold text-sm">${postVal}</b></span>` : ''}
+              ${r.weight ? `<span>체중: <b class="${color.textClass} font-bold text-sm">${r.weight}kg</b> ${bmiInfo ? `<span class="text-[11px] font-bold text-slate-500">(BMI ${bmiInfo.bmi})</span>` : ''}</span>` : ''}
+            </div>
+
+            ${r.memo ? `
+              <div class="pt-1 border-t border-slate-100 flex items-start gap-1.5 text-xs text-slate-600">
+                <i class="fa-regular fa-note-sticky text-amber-500 mt-0.5 shrink-0"></i>
+                <span class="leading-relaxed bg-amber-50/60 px-2 py-0.5 rounded-md text-slate-700 w-full">${r.memo}</span>
+              </div>
+            ` : ''}
+          </div>
+        `;
+      }).join('');
+    }
+
+    window.startEditRecord = function(id) {
+      const item = records.find(r => r.id === id);
+      if (!item) return;
+
+      editingId = id;
+      document.getElementById('input-date').value = item.date;
+      document.getElementById('input-time').value = item.time;
+      updateDateTimeDisplays(item.date, item.time);
+      setTiming(item.timing);
+
+      document.getElementById('bp-sys').value = item.bpSys || '';
+      document.getElementById('bp-dia').value = item.bpDia || '';
+      document.getElementById('pulse').value = item.pulse || '';
+
+      const preVal = item.sugarPre !== undefined ? item.sugarPre : (item.sugarType === '식전' ? item.sugar : '');
+      const postVal = item.sugarPost !== undefined ? item.sugarPost : (item.sugarType === '식후 2시간' ? item.sugar : '');
+      document.getElementById('sugar-pre').value = preVal || '';
+      document.getElementById('sugar-post').value = postVal || '';
+
+      document.getElementById('weight').value = item.weight || '';
+      document.getElementById('record-memo').value = item.memo || '';
+      updateRealtimeBmi();
+
+      document.getElementById('edit-mode-banner').classList.remove('hidden');
+      const saveBtn = document.getElementById('save-btn');
+      saveBtn.innerText = '수정 내용 반영하기';
+      saveBtn.className = 'w-full py-4 bg-amber-500 hover:bg-amber-600 active:scale-[0.98] text-white font-bold rounded-xl shadow-md shadow-amber-500/20 transition-all text-sm';
+
+      switchTab('tab-record');
+    };
+
+    window.deleteRecord = function(id) {
+      if (!confirm('이 기록을 삭제하시겠습니까?')) return;
+      records = records.filter(r => r.id !== id);
+      localStorage.setItem('health_records', JSON.stringify(records));
+      if (editingId === id) resetFormToDefault();
+      renderHistory();
+    };
+
+    function buildSquareTabLegend(containerId, chartInstance) {
+      const container = document.getElementById(containerId);
+      if (!container) return;
+      container.innerHTML = '';
+
+      chartInstance.data.datasets.forEach((dataset, index) => {
+        if (dataset.isGuideLine) return;
+
+        const isVisible = chartInstance.isDatasetVisible(index);
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = `tab-toggle-btn ${isVisible ? '' : 'inactive'}`;
+        
+        btn.style.backgroundColor = isVisible ? `${dataset.borderColor}12` : '#f8fafc';
+        btn.style.borderColor = isVisible ? dataset.borderColor : '#e2e8f0';
+        btn.style.color = isVisible ? dataset.borderColor : '#94a3b8';
+        btn.innerText = dataset.label;
+
+        btn.addEventListener('click', () => {
+          const currentlyVisible = chartInstance.isDatasetVisible(index);
+          chartInstance.setDatasetVisibility(index, !currentlyVisible);
+          chartInstance.update();
+          buildSquareTabLegend(containerId, chartInstance);
+        });
+
+        container.appendChild(btn);
+      });
+    }
+
+    function buildBloodPressureSquareLegend(containerId, chartInstance) {
+      const container = document.getElementById(containerId);
+      if (!container) return;
+      container.innerHTML = '';
+
+      const pairs = [
+        { label: '아침', sysIdx: 0, diaIdx: 1, color: '#0284c7' },
+        { label: '점심', sysIdx: 2, diaIdx: 3, color: '#16a34a' },
+        { label: '저녁', sysIdx: 4, diaIdx: 5, color: '#e11d48' },
+        { label: '취침전', sysIdx: 6, diaIdx: 7, color: '#7c3aed' }
+      ];
+
+      pairs.forEach(p => {
+        const isVisible = chartInstance.isDatasetVisible(p.sysIdx);
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = `tab-toggle-btn ${isVisible ? '' : 'inactive'}`;
+        
+        btn.style.backgroundColor = isVisible ? `${p.color}12` : '#f8fafc';
+        btn.style.borderColor = isVisible ? p.color : '#e2e8f0';
+        btn.style.color = isVisible ? p.color : '#94a3b8';
+        btn.innerText = p.label;
+
+        btn.addEventListener('click', () => {
+          const nextState = !chartInstance.isDatasetVisible(p.sysIdx);
+          chartInstance.setDatasetVisibility(p.sysIdx, nextState);
+          chartInstance.setDatasetVisibility(p.diaIdx, nextState);
+          chartInstance.update();
+          buildBloodPressureSquareLegend(containerId, chartInstance);
+        });
+
+        container.appendChild(btn);
+      });
+    }
+
+    const highLegibilityDataLabels = {
+      align: 'top',
+      anchor: 'end',
+      offset: 4,
+      font: { size: 11, weight: '800' },
+      color: (ctx) => ctx.dataset.borderColor,
+      formatter: (value, ctx) => {
+        if (ctx.dataset.isGuideLine) return '';
+        return (value !== null && value !== undefined) ? value : '';
+      },
+      backgroundColor: 'rgba(255, 255, 255, 0.95)',
+      borderRadius: 4,
+      borderWidth: 1,
+      borderColor: (ctx) => `${ctx.dataset.borderColor}60`,
+      padding: { top: 1, bottom: 1, left: 2.5, right: 2.5 },
+      clip: false,
+      display: (ctx) => {
+        if (ctx.dataset.isGuideLine) return false;
+        return 'auto';
+      }
+    };
+
+    function getFilteredDates(days) {
+      const dates = Array.from(new Set(records.map(r => r.date))).sort();
+      if (days > 0 && dates.length > days) {
+        return dates.slice(-days);
+      }
+      return dates;
+    }
+
+    function adjustBoxWidth(boxId, count, minPerItem = 24) {
+      const box = document.getElementById(boxId);
+      if (!box) return;
+      const neededWidth = count * minPerItem;
+      if (neededWidth > 320) {
+        box.style.width = `${neededWidth}px`;
+      } else {
+        box.style.width = '100%';
+      }
+    }
+
+    // 1. 혈당 차트 빌더 (우측 패딩 32~38px 확보로 짤림 방지)
+    function buildSugarChartConfig(targetDays, isZoom = false) {
+      const dates = getFilteredDates(targetDays);
+      const xLabels = dates.map(d => d.slice(5));
+      const allValues = [];
+
+      const getSugarData = (timing, type) => {
+        return dates.map(date => {
+          const found = records.find(r => r.date === date && r.timing === timing);
+          if (!found) return null;
+          let val = null;
+          if (type === 'pre') {
+            val = found.sugarPre !== undefined ? found.sugarPre : (found.sugarType === '식전' ? found.sugar : null);
+          } else {
+            val = found.sugarPost !== undefined ? found.sugarPost : (found.sugarType === '식후 2시간' ? found.sugar : null);
+          }
+          if (val !== null) allValues.push(val);
+          return val;
+        });
+      };
+
+      const targetVal = currentSugarMode === 'pre' ? 100 : 140;
+      const targetColor = currentSugarMode === 'pre' ? '#10b981' : '#f59e0b';
+      const targetTitle = currentSugarMode === 'pre' ? '식전 정상 100' : '식후 정상 140';
+
+      const datasets = [
+        { label: '아침', data: getSugarData('아침', currentSugarMode), borderColor: '#0284c7', backgroundColor: '#0284c7', tension: 0.25, pointStyle: 'rectRounded', pointRadius: 4.5, pointHoverRadius: 6 },
+        { label: '점심', data: getSugarData('점심', currentSugarMode), borderColor: '#16a34a', backgroundColor: '#16a34a', tension: 0.25, pointStyle: 'rectRounded', pointRadius: 4.5, pointHoverRadius: 6 },
+        { label: '저녁', data: getSugarData('저녁', currentSugarMode), borderColor: '#e11d48', backgroundColor: '#e11d48', tension: 0.25, pointStyle: 'rectRounded', pointRadius: 4.5, pointHoverRadius: 6 },
+        { label: '취침전', data: getSugarData('취침전', currentSugarMode), borderColor: '#7c3aed', backgroundColor: '#7c3aed', tension: 0.25, pointStyle: 'rectRounded', pointRadius: 4.5, pointHoverRadius: 6 }
+      ];
+
+      let dynamicMin = undefined;
+      let dynamicMax = undefined;
+      if (allValues.length > 0) {
+        const minVal = Math.min(...allValues, targetVal);
+        const maxVal = Math.max(...allValues, targetVal);
+        const diff = maxVal - minVal;
+        const pad = diff <= 20 ? 15 : Math.ceil(diff * 0.25);
+        dynamicMin = Math.max(0, Math.floor((minVal - pad) / 10) * 10);
+        dynamicMax = Math.ceil((maxVal + pad) / 10) * 10;
+      }
+
+      if (dates.length > 0) {
+        datasets.push({
+          label: targetTitle,
+          data: dates.map(() => targetVal),
+          borderColor: targetColor,
+          borderWidth: 1.2,
+          borderDash: [4, 4],
+          pointRadius: 0,
+          fill: false,
+          isGuideLine: true
+        });
+      }
+
+      return {
+        data: { labels: xLabels, datasets },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          spanGaps: true,
+          layout: { 
+            padding: isZoom 
+              ? { top: 35, bottom: 12, left: 12, right: 38 } 
+              : { top: 25, bottom: 6, left: 8, right: 32 } 
+          },
+          plugins: {
+            legend: { display: false },
+            tooltip: { callbacks: { title: (items) => `${dates[items[0].dataIndex]}` } },
+            datalabels: highLegibilityDataLabels
+          },
+          scales: {
+            x: { 
+              ticks: { 
+                font: { size: 10, weight: '700' }, 
+                maxRotation: 45,
+                color: isZoom ? '#94a3b8' : '#64748b'
+              },
+              grid: { color: isZoom ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)' },
+              offset: false 
+            },
+            y: { 
+              suggestedMin: dynamicMin,
+              suggestedMax: dynamicMax,
+              ticks: { 
+                font: { size: 11, weight: '700' },
+                color: isZoom ? '#94a3b8' : '#64748b'
+              },
+              grid: { color: isZoom ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)' }
+            }
+          }
+        },
+        datesCount: dates.length
+      };
+    }
+
+    function renderSugarChart() {
+      const config = buildSugarChartConfig(selectedRanges.sugar, false);
+      adjustBoxWidth('sugar-chart-box', config.datesCount, 24);
+
+      if (charts.sugar) charts.sugar.destroy();
+      charts.sugar = new Chart(document.getElementById('sugarChart'), {
+        type: 'line',
+        data: config.data,
+        options: config.options
+      });
+      buildSquareTabLegend('sugar-legend-container', charts.sugar);
+    }
+
+    // 2. 혈압 차트 빌더 (우측 패딩 32~38px 확보로 짤림 방지)
+    function buildBpChartConfig(targetDays, isZoom = false) {
+      const dates = getFilteredDates(targetDays);
+      const xLabels = dates.map(d => d.slice(5));
+      const allValues = [];
+
+      const getFieldData = (timing, field) => {
+        return dates.map(date => {
+          const found = records.find(r => r.date === date && r.timing === timing);
+          if (!found || found[field] === null) return null;
+          allValues.push(found[field]);
+          return found[field];
+        });
+      };
+
+      const datasets = [
+        { label: '아침 수축기', data: getFieldData('아침', 'bpSys'), borderColor: '#0284c7', backgroundColor: '#0284c7', tension: 0.25, pointStyle: 'rectRounded', pointRadius: 4.5, pointHoverRadius: 6 },
+        { label: '아침 이완기', data: getFieldData('아침', 'bpDia'), borderColor: '#38bdf8', borderDash: [3, 3], backgroundColor: '#38bdf8', tension: 0.25, pointStyle: 'rectRounded', pointRadius: 3.5, pointHoverRadius: 5 },
+        { label: '점심 수축기', data: getFieldData('점심', 'bpSys'), borderColor: '#16a34a', backgroundColor: '#16a34a', tension: 0.25, pointStyle: 'rectRounded', pointRadius: 4.5, pointHoverRadius: 6 },
+        { label: '점심 이완기', data: getFieldData('점심', 'bpDia'), borderColor: '#4ade80', borderDash: [3, 3], backgroundColor: '#4ade80', tension: 0.25, pointStyle: 'rectRounded', pointRadius: 3.5, pointHoverRadius: 5 },
+        { label: '저녁 수축기', data: getFieldData('저녁', 'bpSys'), borderColor: '#e11d48', backgroundColor: '#e11d48', tension: 0.25, pointStyle: 'rectRounded', pointRadius: 4.5, pointHoverRadius: 6 },
+        { label: '저녁 이완기', data: getFieldData('저녁', 'bpDia'), borderColor: '#fb7185', borderDash: [3, 3], backgroundColor: '#fb7185', tension: 0.25, pointStyle: 'rectRounded', pointRadius: 3.5, pointHoverRadius: 5 },
+        { label: '취침전 수축기', data: getFieldData('취침전', 'bpSys'), borderColor: '#7c3aed', backgroundColor: '#7c3aed', tension: 0.25, pointStyle: 'rectRounded', pointRadius: 4.5, pointHoverRadius: 6 },
+        { label: '취침전 이완기', data: getFieldData('취침전', 'bpDia'), borderColor: '#c084fc', borderDash: [3, 3], backgroundColor: '#c084fc', tension: 0.25, pointStyle: 'rectRounded', pointRadius: 3.5, pointHoverRadius: 5 }
+      ];
+
+      let dynamicMin = undefined;
+      let dynamicMax = undefined;
+      if (allValues.length > 0) {
+        const minVal = Math.min(...allValues, 80);
+        const maxVal = Math.max(...allValues, 120);
+        const diff = maxVal - minVal;
+        const pad = diff <= 20 ? 15 : Math.ceil(diff * 0.2);
+        dynamicMin = Math.max(40, Math.floor((minVal - pad) / 10) * 10);
+        dynamicMax = Math.ceil((maxVal + pad) / 10) * 10;
+      }
+
+      if (dates.length > 0) {
+        datasets.push(
+          {
+            label: '수축기 120',
+            data: dates.map(() => 120),
+            borderColor: '#f43f5e',
+            borderWidth: 1.2,
+            borderDash: [4, 4],
+            pointRadius: 0,
+            fill: false,
+            isGuideLine: true
+          },
+          {
+            label: '이완기 80',
+            data: dates.map(() => 80),
+            borderColor: '#38bdf8',
+            borderWidth: 1.2,
+            borderDash: [4, 4],
+            pointRadius: 0,
+            fill: false,
+            isGuideLine: true
+          }
+        );
+      }
+
+      return {
+        data: { labels: xLabels, datasets },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          spanGaps: true,
+          layout: { 
+            padding: isZoom 
+              ? { top: 35, bottom: 12, left: 12, right: 38 } 
+              : { top: 25, bottom: 6, left: 8, right: 32 } 
+          },
+          plugins: {
+            legend: { display: false },
+            tooltip: { callbacks: { title: (items) => `${dates[items[0].dataIndex]}` } },
+            datalabels: highLegibilityDataLabels
+          },
+          scales: {
+            x: { 
+              ticks: { 
+                font: { size: 10, weight: '700' }, 
+                maxRotation: 45,
+                color: isZoom ? '#94a3b8' : '#64748b'
+              },
+              grid: { color: isZoom ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)' },
+              offset: false 
+            },
+            y: { 
+              suggestedMin: dynamicMin,
+              suggestedMax: dynamicMax,
+              ticks: { 
+                font: { size: 11, weight: '700' },
+                color: isZoom ? '#94a3b8' : '#64748b'
+              },
+              grid: { color: isZoom ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)' }
+            }
+          }
+        },
+        datesCount: dates.length
+      };
+    }
+
+    function renderBpChart() {
+      const config = buildBpChartConfig(selectedRanges.bp, false);
+      adjustBoxWidth('bp-chart-box', config.datesCount, 24);
+
+      if (charts.bp) charts.bp.destroy();
+      charts.bp = new Chart(document.getElementById('bpChart'), {
+        type: 'line',
+        data: config.data,
+        options: config.options
+      });
+      buildBloodPressureSquareLegend('bp-legend-container', charts.bp);
+    }
+
+    // 3. 체중 & BMI 차트 빌더 (우측 패딩 32~38px 확보로 짤림 방지)
+    function buildWeightChartConfig(targetDays, isZoom = false) {
+      const dates = getFilteredDates(targetDays);
+      const xLabels = dates.map(d => d.slice(5));
+      const realDataValues = [];
+
+      const getVal = (timing) => {
+        return dates.map(date => {
+          const found = records.find(r => r.date === date && r.timing === timing);
+          if (!found || found.weight === null) return null;
+          let val = null;
+          if (currentWeightMode === 'kg') {
+            val = found.weight;
+          } else {
+            if (!userHeight) return null;
+            const res = calculateBmi(found.weight, userHeight);
+            val = res ? res.bmi : null;
+          }
+          if (val !== null) realDataValues.push(val);
+          return val;
+        });
+      };
+
+      const datasets = [
+        { label: '아침', data: getVal('아침'), borderColor: '#0284c7', backgroundColor: '#0284c7', tension: 0.25, pointStyle: 'rectRounded', pointRadius: 4.5, pointHoverRadius: 6 },
+        { label: '점심', data: getVal('점심'), borderColor: '#16a34a', backgroundColor: '#16a34a', tension: 0.25, pointStyle: 'rectRounded', pointRadius: 4.5, pointHoverRadius: 6 },
+        { label: '저녁', data: getVal('저녁'), borderColor: '#e11d48', backgroundColor: '#e11d48', tension: 0.25, pointStyle: 'rectRounded', pointRadius: 4.5, pointHoverRadius: 6 },
+        { label: '취침전', data: getVal('취침전'), borderColor: '#7c3aed', backgroundColor: '#7c3aed', tension: 0.25, pointStyle: 'rectRounded', pointRadius: 4.5, pointHoverRadius: 6 }
+      ];
+
+      let dynamicMin = undefined;
+      let dynamicMax = undefined;
+      let yStep = undefined;
+
+      if (realDataValues.length > 0) {
+        const minVal = Math.min(...realDataValues);
+        const maxVal = Math.max(...realDataValues);
+        const diff = maxVal - minVal;
+
+        if (currentWeightMode === 'kg') {
+          const pad = diff <= 4 ? 2.5 : Math.ceil(diff * 0.3);
+          dynamicMin = Math.max(0, Math.floor(minVal - pad));
+          dynamicMax = Math.ceil(maxVal + pad);
+          yStep = 1;
+        } else {
+          const pad = diff <= 1.5 ? 0.8 : diff * 0.3;
+          dynamicMin = Math.max(10, Math.floor((minVal - pad) * 10) / 10);
+          dynamicMax = Math.ceil((maxVal + pad) * 10) / 10;
+          yStep = 0.2;
+        }
+      }
+
+      if (dates.length > 0) {
+        if (currentWeightMode === 'kg') {
+          if (userHeight) {
+            const normalWeightMax = Math.round(23 * (userHeight / 100) * (userHeight / 100) * 10) / 10;
+            if (dynamicMin === undefined || (normalWeightMax >= dynamicMin && normalWeightMax <= dynamicMax)) {
+              datasets.push({
+                label: `정상체중 (${normalWeightMax}kg)`,
+                data: dates.map(() => normalWeightMax),
+                borderColor: '#10b981',
+                borderWidth: 1.2,
+                borderDash: [4, 4],
+                pointRadius: 0,
+                fill: false,
+                isGuideLine: true
+              });
+            }
+          }
+        } else {
+          if (dynamicMin === undefined || (23 >= dynamicMin && 23 <= dynamicMax)) {
+            datasets.push({
+              label: '과체중 (23)',
+              data: dates.map(() => 23),
+              borderColor: '#f59e0b',
+              borderWidth: 1.5,
+              borderDash: [5, 5],
+              pointRadius: 0,
+              fill: false,
+              isGuideLine: true
+            });
+          }
+          if (dynamicMin === undefined || (25 >= dynamicMin && 25 <= dynamicMax)) {
+            datasets.push({
+              label: '비만 (25)',
+              data: dates.map(() => 25),
+              borderColor: '#ef4444',
+              borderWidth: 1.5,
+              borderDash: [5, 5],
+              pointRadius: 0,
+              fill: false,
+              isGuideLine: true
+            });
+          }
+        }
+      }
+
+      return {
+        data: { labels: xLabels, datasets },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          spanGaps: true,
+          layout: { 
+            padding: isZoom 
+              ? { top: 35, bottom: 12, left: 12, right: 38 } 
+              : { top: 25, bottom: 6, left: 8, right: 32 } 
+          },
+          plugins: {
+            legend: { display: false },
+            tooltip: { callbacks: { title: (items) => `${dates[items[0].dataIndex]}` } },
+            datalabels: highLegibilityDataLabels
+          },
+          scales: {
+            x: { 
+              ticks: { 
+                font: { size: 10, weight: '700' }, 
+                maxRotation: 45,
+                color: isZoom ? '#94a3b8' : '#64748b'
+              },
+              grid: { color: isZoom ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)' },
+              offset: false 
+            },
+            y: {
+              min: dynamicMin,
+              max: dynamicMax,
+              ticks: {
+                stepSize: yStep,
+                font: { size: 11, weight: '700' },
+                color: isZoom ? '#94a3b8' : '#64748b',
+                callback: (val) => currentWeightMode === 'bmi' ? Number(val).toFixed(1) : val
+              },
+              grid: { color: isZoom ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)' }
+            }
+          }
+        },
+        datesCount: dates.length
+      };
+    }
+
+    function renderWeightChart() {
+      const config = buildWeightChartConfig(selectedRanges.weight, false);
+      adjustBoxWidth('weight-chart-box', config.datesCount, 24);
+
+      if (charts.weight) charts.weight.destroy();
+      charts.weight = new Chart(document.getElementById('weightChart'), {
+        type: 'line',
+        data: config.data,
+        options: config.options
+      });
+      buildSquareTabLegend('weight-legend-container', charts.weight);
+    }
+
+    // === 그래프 전체화면 확대 모달 관리 ===
+    function openZoomChart(type) {
+      currentZoomType = type;
+      const modal = document.getElementById('zoom-modal');
+      const titleEl = document.getElementById('zoom-modal-title');
+      const switchBox = document.getElementById('zoom-switch-container');
+      
+      const titles = {
+        'sugar': '혈당 변화 추이 전체화면 확대',
+        'bp': '혈압 추이 전체화면 확대',
+        'weight': '체중 및 BMI 지수 전체화면 확대'
+      };
+      titleEl.innerText = titles[type];
+
+      if (type === 'sugar') {
+        switchBox.classList.remove('hidden');
+        switchBox.innerHTML = `
+          <div class="grid grid-cols-2 gap-1 p-1 bg-slate-900 border border-slate-800 rounded-xl">
+            <button type="button" id="zoom-sugar-pre" class="py-2 text-xs font-bold rounded-lg transition-all ${currentSugarMode === 'pre' ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-400'}">
+              식전 혈당
+            </button>
+            <button type="button" id="zoom-sugar-post" class="py-2 text-xs font-bold rounded-lg transition-all ${currentSugarMode === 'post' ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-400'}">
+              식후 혈당
+            </button>
+          </div>
+        `;
+        document.getElementById('zoom-sugar-pre').addEventListener('click', () => {
+          setSugarMode('pre');
+          openZoomChart('sugar');
+        });
+        document.getElementById('zoom-sugar-post').addEventListener('click', () => {
+          setSugarMode('post');
+          openZoomChart('sugar');
+        });
+      } else if (type === 'weight') {
+        switchBox.classList.remove('hidden');
+        switchBox.innerHTML = `
+          <div class="grid grid-cols-2 gap-1 p-1 bg-slate-900 border border-slate-800 rounded-xl">
+            <button type="button" id="zoom-weight-kg" class="py-2 text-xs font-bold rounded-lg transition-all ${currentWeightMode === 'kg' ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-400'}">
+              체중 (kg)
+            </button>
+            <button type="button" id="zoom-weight-bmi" class="py-2 text-xs font-bold rounded-lg transition-all ${currentWeightMode === 'bmi' ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-400'}">
+              BMI
+            </button>
+          </div>
+        `;
+        document.getElementById('zoom-weight-kg').addEventListener('click', () => {
+          setWeightMode('kg');
+          openZoomChart('weight');
+        });
+        document.getElementById('zoom-weight-bmi').addEventListener('click', () => {
+          setWeightMode('bmi');
+          openZoomChart('weight');
+        });
+      } else {
+        switchBox.classList.add('hidden');
+        switchBox.innerHTML = '';
+      }
+
+      modal.classList.remove('hidden');
+      setZoomHeightMode(zoomHeightMode);
+      renderZoomChart(type);
+    }
+
+    function setZoomHeightMode(mode) {
+      zoomHeightMode = mode;
+      const fitBtn = document.getElementById('btn-zoom-fit');
+      const tallBtn = document.getElementById('btn-zoom-tall');
+      const isFit = mode === 'fit';
+
+      if (fitBtn && tallBtn) {
+        fitBtn.className = `px-2 py-1 rounded-md transition-all text-xs ${isFit ? 'bg-blue-600 text-white font-bold shadow-sm' : 'text-slate-400 hover:text-slate-200'}`;
+        tallBtn.className = `px-2 py-1 rounded-md transition-all text-xs ${!isFit ? 'bg-blue-600 text-white font-bold shadow-sm' : 'text-slate-400 hover:text-slate-200'}`;
+      }
+
+      const zoomBox = document.getElementById('zoom-chart-box');
+      if (zoomBox) {
+        if (isFit) {
+          zoomBox.className = 'h-[55vh] min-h-[280px] shrink-0 pr-6 transition-all duration-150';
+        } else {
+          zoomBox.className = 'h-[620px] shrink-0 pr-6 transition-all duration-150';
+        }
+      }
+
+      if (charts.zoom) {
+        charts.zoom.resize();
+      }
+
+      const wrap = document.getElementById('zoom-scroll-wrap');
+      if (wrap && !isFit) {
+        setTimeout(() => {
+          wrap.scrollTop = (wrap.scrollHeight - wrap.clientHeight) / 2;
+        }, 50);
+      }
+    }
+
+    function closeZoomChart() {
+      const modal = document.getElementById('zoom-modal');
+      modal.classList.add('hidden');
+      if (charts.zoom) {
+        charts.zoom.destroy();
+        charts.zoom = null;
+      }
+      currentZoomType = null;
+    }
+
+    function renderZoomChart(type) {
+      let config = null;
+      if (type === 'sugar') config = buildSugarChartConfig(selectedRanges.sugar, true);
+      else if (type === 'bp') config = buildBpChartConfig(selectedRanges.bp, true);
+      else if (type === 'weight') config = buildWeightChartConfig(selectedRanges.weight, true);
+
+      if (!config) return;
+
+      const datesCount = config.datesCount || 1;
+      // 확대 창에서는 날짜당 65px로 널찍하게 잡아 확실한 가로 스크롤 제공
+      const minWidth = Math.max(datesCount * 65, 380);
+      const zoomBox = document.getElementById('zoom-chart-box');
+      if (zoomBox) {
+        zoomBox.style.width = `${minWidth}px`;
+        if (zoomHeightMode === 'fit') {
+          zoomBox.className = 'h-[55vh] min-h-[280px] shrink-0 pr-6 transition-all duration-150';
+        } else {
+          zoomBox.className = 'h-[620px] shrink-0 pr-6 transition-all duration-150';
+        }
+      }
+
+      if (charts.zoom) charts.zoom.destroy();
+
+      charts.zoom = new Chart(document.getElementById('zoomChart'), {
+        type: 'line',
+        data: config.data,
+        options: config.options
+      });
+
+      if (type === 'bp') {
+        buildBloodPressureSquareLegend('zoom-legend-container', charts.zoom);
+      } else {
+        buildSquareTabLegend('zoom-legend-container', charts.zoom);
+      }
+
+      setTimeout(() => {
+        const wrap = document.getElementById('zoom-scroll-wrap');
+        if (wrap) {
+          wrap.scrollLeft = wrap.scrollWidth;
+          if (zoomHeightMode === 'tall') {
+            wrap.scrollTop = (wrap.scrollHeight - wrap.clientHeight) / 2;
+          }
+        }
+      }, 80);
+    }
+
+    function renderCharts() {
+      renderSugarChart();
+      renderBpChart();
+      renderWeightChart();
+      scrollToLatest();
+    }
+
+    // 백업: 공유창 1회만 단독 실행
+    document.getElementById('backup-share-btn').addEventListener('click', async () => {
+      const dataStr = JSON.stringify(records, null, 2);
+      const filename = `health_backup_${new Date().toISOString().slice(0,10)}.json`;
+      const file = new File([dataStr], filename, { type: 'application/json' });
+
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        try {
+          await navigator.share({
+            files: [file],
+            title: '나의 건강 관리 백업',
+            text: '나의 건강 관리 데이터 백업 파일입니다.'
+          });
+        } catch (e) {}
+        return;
+      }
+
+      const blob = new Blob([dataStr], { type: 'application/json' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(a.href);
+    });
+
+    // 텍스트 복사 백업
+    document.getElementById('backup-copy-btn').addEventListener('click', () => {
+      const dataStr = JSON.stringify(records);
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(dataStr).then(() => {
+          alert('데이터가 클립보드에 복사되었습니다! 메모장 등에 붙여넣어 보관하세요.');
+        }).catch(() => fallbackCopy(dataStr));
+      } else {
+        fallbackCopy(dataStr);
+      }
+    });
+
+    function fallbackCopy(text) {
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+      alert('데이터가 복사되었습니다!');
+    }
+
+    // 파일 복원 시에도 날짜/시간 순서 정렬
+    document.getElementById('restore-file').addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (event) => applyRestoredData(event.target.result);
+      reader.readAsText(file);
+      e.target.value = '';
+    });
+
+    // 텍스트 복원
+    const modal = document.getElementById('restore-modal');
+    const textarea = document.getElementById('restore-textarea');
+    document.getElementById('restore-text-btn').addEventListener('click', () => {
+      textarea.value = '';
+      modal.classList.remove('hidden');
+    });
+    document.getElementById('modal-cancel').addEventListener('click', () => modal.classList.add('hidden'));
+    document.getElementById('modal-apply').addEventListener('click', () => {
+      const val = textarea.value.trim();
+      if (!val) {
+        alert('데이터를 입력해 주세요.');
+        return;
+      }
+      if (applyRestoredData(val)) modal.classList.add('hidden');
+    });
+
+    function applyRestoredData(jsonString) {
+      try {
+        const parsed = JSON.parse(jsonString);
+        if (Array.isArray(parsed)) {
+          records = parsed;
+          sortRecordsChronologically();
+          localStorage.setItem('health_records', JSON.stringify(records));
+          alert(`성공적으로 ${records.length}건의 기록이 복원되었습니다.`);
+          renderHistory();
+          return true;
+        } else {
+          alert('올바른 백업 데이터 형식이 아닙니다.');
+          return false;
+        }
+      } catch (err) {
+        alert('데이터를 읽는 중 오류가 발생했습니다.');
+        return false;
+      }
+    }
+
+    // 전체 초기화
+    document.getElementById('clear-all-btn').addEventListener('click', () => {
+      if (confirm('모든 기록을 삭제하시겠습니까? 복구할 수 없습니다.')) {
+        records = [];
+        localStorage.removeItem('health_records');
+        resetFormToDefault();
+        renderHistory();
+        alert('초기화되었습니다.');
+      }
+    });
+
+    sortRecordsChronologically();
+    initHeaderDate();
+    const initTime = document.getElementById('input-time').value;
+    setTiming(getTimingByTimeString(initTime));
+    updateUserHeightDisplay();
+    document.querySelectorAll('.timing-btn').forEach(b => b.addEventListener('click', () => setTiming(b.dataset.timing)));
+  </script>
+</body>
+</html>
