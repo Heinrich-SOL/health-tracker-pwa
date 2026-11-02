@@ -6,7 +6,10 @@
   <title>나의 건강 관리</title>
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
-  <meta name="theme-color" content="#ffffff">
+  <meta name="apple-mobile-web-app-title" content="건강관리">
+  <meta name="theme-color" content="#2563eb">
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="apple-touch-icon.png">
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0"></script>
@@ -254,7 +257,12 @@
         </div>
 
         <div class="bg-slate-50 p-3 rounded-xl border border-slate-200 flex items-center justify-between px-3.5">
-          <span class="text-xs font-bold text-slate-700">현재 체중</span>
+          <div class="flex items-center gap-2">
+            <span class="text-xs font-bold text-slate-700">현재 체중</span>
+            <button type="button" id="btn-load-recent-weight" class="text-[10px] font-bold text-indigo-600 bg-indigo-50 hover:bg-indigo-100 active:scale-95 px-2 py-0.5 rounded-md border border-indigo-200 flex items-center gap-1 transition-all" title="가장 최근 기록된 체중 불러오기">
+              <i class="fa-solid fa-clock-rotate-left text-[9px]"></i> 이전 체중
+            </button>
+          </div>
           <div class="flex items-baseline gap-1">
             <input type="number" id="weight" step="0.1" placeholder="70.0" inputmode="decimal" class="w-16 text-right text-xl font-bold text-slate-900 bg-transparent focus:outline-none p-0">
             <span class="text-xs text-slate-400 font-semibold">kg</span>
@@ -294,6 +302,48 @@
     <!-- TAB 2: Charts -->
     <section id="tab-charts" class="space-y-4 hidden">
       
+      <!-- 0. 최근 30일 핵심 건강 통계 요약 카드 -->
+      <div class="bg-gradient-to-br from-slate-900 to-slate-800 text-white p-4 rounded-2xl shadow-sm space-y-3">
+        <div class="flex items-center justify-between border-b border-slate-700/60 pb-2">
+          <div class="flex items-center gap-1.5 text-xs font-bold tracking-tight text-slate-200">
+            <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+            <span>최근 30일 건강 핵심 통계</span>
+          </div>
+          <span id="summary-period-badge" class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-700/80 text-slate-300">
+            기록 0건
+          </span>
+        </div>
+
+        <div class="grid grid-cols-3 gap-2 text-center">
+          <!-- 혈압 평균 -->
+          <div class="bg-slate-800/80 p-2.5 rounded-xl border border-slate-700/50 flex flex-col items-center justify-center">
+            <span class="text-[11px] font-semibold text-rose-400 flex items-center gap-1 mb-1">
+              <i class="fa-solid fa-heart-pulse text-[10px]"></i> 평균 혈압
+            </span>
+            <div id="stat-avg-bp" class="text-sm font-extrabold text-white tracking-tight">-- / --</div>
+            <span id="stat-bp-status" class="text-[9px] font-bold text-slate-400 mt-0.5">mmHg</span>
+          </div>
+
+          <!-- 공복 혈당 평균 -->
+          <div class="bg-slate-800/80 p-2.5 rounded-xl border border-slate-700/50 flex flex-col items-center justify-center">
+            <span class="text-[11px] font-semibold text-emerald-400 flex items-center gap-1 mb-1">
+              <i class="fa-solid fa-droplet text-[10px]"></i> 식전 혈당
+            </span>
+            <div id="stat-avg-sugar" class="text-sm font-extrabold text-white tracking-tight">--</div>
+            <span id="stat-sugar-status" class="text-[9px] font-bold text-slate-400 mt-0.5">mg/dL 평균</span>
+          </div>
+
+          <!-- 최근 체중 및 변화 -->
+          <div class="bg-slate-800/80 p-2.5 rounded-xl border border-slate-700/50 flex flex-col items-center justify-center">
+            <span class="text-[11px] font-semibold text-indigo-400 flex items-center gap-1 mb-1">
+              <i class="fa-solid fa-weight-scale text-[10px]"></i> 최근 체중
+            </span>
+            <div id="stat-recent-weight" class="text-sm font-extrabold text-white tracking-tight">-- kg</div>
+            <span id="stat-weight-diff" class="text-[9px] font-bold text-slate-400 mt-0.5">변화 --</span>
+          </div>
+        </div>
+      </div>
+
       <!-- 1. 혈당 차트 -->
       <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm space-y-2.5">
         <div class="flex items-center justify-between">
@@ -458,6 +508,29 @@
           </div>
           <button id="btn-save-height" class="py-3 px-4 bg-indigo-600 text-white rounded-xl text-xs font-bold hover:bg-indigo-700 active:scale-95 transition-all">
             저장
+          </button>
+        </div>
+      </div>
+
+      <!-- 병원 제출용 엑셀(CSV) 내보내기 -->
+      <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm space-y-3">
+        <div class="flex items-center justify-between">
+          <h2 class="text-sm font-bold text-slate-800 flex items-center gap-1.5">
+            <i class="fa-solid fa-file-excel text-emerald-600"></i> 병원 진료용 엑셀(CSV) 내보내기
+          </h2>
+          <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200">
+            진료/인쇄용
+          </span>
+        </div>
+        <p class="text-xs text-slate-500 leading-relaxed">
+          내과 진료 시 의사 선생님께 보여드리거나 인쇄할 수 있도록 전체 기록을 엑셀 표(.csv)로 저장하거나 공유합니다.
+        </p>
+        <div class="grid grid-cols-2 gap-2 pt-1">
+          <button id="btn-export-csv-share" class="py-3 px-2 bg-emerald-600 text-white active:bg-emerald-700 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 shadow-sm shadow-emerald-500/20">
+            <i class="fa-solid fa-share-nodes"></i> 엑셀 파일 공유
+          </button>
+          <button id="btn-export-csv-download" class="py-3 px-2 bg-emerald-50 text-emerald-700 active:bg-emerald-100 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 border border-emerald-200">
+            <i class="fa-solid fa-download"></i> CSV 다운로드
           </button>
         </div>
       </div>
@@ -639,6 +712,12 @@
   </div>
 
   <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./service-worker.js').catch(() => {});
+      });
+    }
+
     if (typeof ChartDataLabels !== 'undefined') {
       Chart.register(ChartDataLabels);
     }
@@ -993,6 +1072,7 @@
       }
 
       renderHistory();
+      renderSummaryStats();
     });
 
     function resetFormFields() {
@@ -1120,6 +1200,48 @@
       });
     });
 
+    function getHealthAlerts(r, preVal, postVal) {
+      const alerts = [];
+      const sys = parseFloat(r.bpSys);
+      const dia = parseFloat(r.bpDia);
+      if (!isNaN(sys) && !isNaN(dia)) {
+        if (sys >= 140 || dia >= 90) {
+          alerts.push({ text: '고혈압 주의', cls: 'bg-rose-50 text-rose-700 border-rose-200' });
+        } else if (sys < 90 || dia < 60) {
+          alerts.push({ text: '저혈압 주의', cls: 'bg-sky-50 text-sky-700 border-sky-200' });
+        }
+      }
+
+      const pulse = parseFloat(r.pulse);
+      if (!isNaN(pulse)) {
+        if (pulse >= 100) {
+          alerts.push({ text: '빈맥 주의', cls: 'bg-amber-50 text-amber-700 border-amber-200' });
+        } else if (pulse < 50) {
+          alerts.push({ text: '서맥 주의', cls: 'bg-indigo-50 text-indigo-700 border-indigo-200' });
+        }
+      }
+
+      const pre = parseFloat(preVal);
+      if (!isNaN(pre)) {
+        if (pre < 70) {
+          alerts.push({ text: '저혈당 경고', cls: 'bg-purple-50 text-purple-700 border-purple-200' });
+        } else if (pre >= 126) {
+          alerts.push({ text: '식전 고혈당', cls: 'bg-rose-50 text-rose-700 border-rose-200' });
+        }
+      }
+
+      const post = parseFloat(postVal);
+      if (!isNaN(post)) {
+        if (post < 70) {
+          alerts.push({ text: '저혈당 경고', cls: 'bg-purple-50 text-purple-700 border-purple-200' });
+        } else if (post >= 200) {
+          alerts.push({ text: '식후 고혈당', cls: 'bg-rose-50 text-rose-700 border-rose-200' });
+        }
+      }
+
+      return alerts;
+    }
+
     function renderHistory() {
       const container = document.getElementById('history-list');
       document.getElementById('record-count').innerText = `${records.length}건`;
@@ -1134,13 +1256,15 @@
         const color = timingColors[r.timing] || timingColors['아침'];
 
         const bmiInfo = (r.weight && userHeight) ? calculateBmi(r.weight, userHeight) : null;
+        const alerts = getHealthAlerts(r, preVal, postVal);
 
         return `
           <div class="bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm space-y-2">
             <div class="flex items-center justify-between">
-              <div class="flex items-center gap-2">
+              <div class="flex items-center gap-1.5 flex-wrap">
                 <span class="text-sm font-bold text-slate-800">${r.date} ${r.time}</span>
                 <span class="text-xs px-2 py-0.5 rounded-md ${color.bgClass} ${color.textClass} font-bold border ${color.badgeBorder}">${r.timing}</span>
+                ${alerts.map(a => `<span class="text-[10px] px-1.5 py-0.5 rounded font-extrabold border ${a.cls}">${a.text}</span>`).join('')}
               </div>
               <div class="flex items-center gap-1.5 shrink-0">
                 <button onclick="startEditRecord(${r.id})" class="text-slate-400 hover:text-blue-600 p-1.5 rounded-lg active:bg-blue-50" title="수정">
@@ -1154,6 +1278,7 @@
 
             <div class="text-xs text-slate-600 flex flex-wrap gap-x-3.5 gap-y-1">
               ${r.bpSys ? `<span>혈압: <b class="${color.textClass} font-extrabold text-sm">${r.bpSys}</b><span class="text-slate-400 font-bold mx-0.5">/</span><b class="${color.diaTextClass} font-extrabold text-sm">${r.bpDia}</b></span>` : ''}
+              ${r.pulse ? `<span class="inline-flex items-center gap-1 text-slate-500 font-semibold"><i class="fa-solid fa-heart text-rose-500 text-[10px]"></i> ${r.pulse}bpm</span>` : ''}
               ${preVal ? `<span>식전: <b class="${color.textClass} font-bold text-sm">${preVal}</b></span>` : ''}
               ${postVal ? `<span>식후: <b class="${color.textClass} font-bold text-sm">${postVal}</b></span>` : ''}
               ${r.weight ? `<span>체중: <b class="${color.textClass} font-bold text-sm">${r.weight}kg</b> ${bmiInfo ? `<span class="text-[11px] font-bold text-slate-500">(BMI ${bmiInfo.bmi})</span>` : ''}</span>` : ''}
@@ -1207,6 +1332,7 @@
       localStorage.setItem('health_records', JSON.stringify(records));
       if (editingId === id) resetFormToDefault();
       renderHistory();
+      renderSummaryStats();
     };
 
     function buildSquareTabLegend(containerId, chartInstance) {
@@ -1866,7 +1992,100 @@
       }, 80);
     }
 
+    function renderSummaryStats() {
+      const periodBadge = document.getElementById('summary-period-badge');
+      const avgBpEl = document.getElementById('stat-avg-bp');
+      const bpStatusEl = document.getElementById('stat-bp-status');
+      const avgSugarEl = document.getElementById('stat-avg-sugar');
+      const sugarStatusEl = document.getElementById('stat-sugar-status');
+      const recentWeightEl = document.getElementById('stat-recent-weight');
+      const weightDiffEl = document.getElementById('stat-weight-diff');
+      
+      if (!periodBadge || !avgBpEl || !avgSugarEl || !recentWeightEl) return;
+
+      const now = new Date();
+      const cutoff = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+      const cutoffStr = cutoff.toISOString().slice(0, 10);
+
+      const recentRecords = records.filter(r => r.date >= cutoffStr);
+      periodBadge.innerText = `기록 ${recentRecords.length}건`;
+
+      // 1. 평균 혈압 (수축기 / 이완기)
+      const bpRecords = recentRecords.filter(r => r.bpSys && r.bpDia);
+      if (bpRecords.length > 0) {
+        const avgSys = Math.round(bpRecords.reduce((sum, r) => sum + parseFloat(r.bpSys), 0) / bpRecords.length);
+        const avgDia = Math.round(bpRecords.reduce((sum, r) => sum + parseFloat(r.bpDia), 0) / bpRecords.length);
+        avgBpEl.innerText = `${avgSys} / ${avgDia}`;
+        
+        if (avgSys >= 140 || avgDia >= 90) {
+          bpStatusEl.innerHTML = `<span class="text-rose-400 font-bold">고혈압 주의</span>`;
+        } else if (avgSys < 90 || avgDia < 60) {
+          bpStatusEl.innerHTML = `<span class="text-sky-400 font-bold">저혈압 주의</span>`;
+        } else if (avgSys <= 120 && avgDia <= 80) {
+          bpStatusEl.innerHTML = `<span class="text-emerald-400 font-bold">정상 범위</span>`;
+        } else {
+          bpStatusEl.innerHTML = `<span class="text-amber-400 font-bold">주의 혈압</span>`;
+        }
+      } else {
+        avgBpEl.innerText = '-- / --';
+        bpStatusEl.innerText = '기록 없음';
+      }
+
+      // 2. 평균 공복(식전) 혈당
+      const sugarRecords = recentRecords.filter(r => {
+        const val = r.sugarPre !== undefined ? r.sugarPre : (r.sugarType === '식전' ? r.sugar : null);
+        return val !== null && val !== undefined && val !== '';
+      });
+
+      if (sugarRecords.length > 0) {
+        const avgSugar = Math.round(sugarRecords.reduce((sum, r) => {
+          const val = r.sugarPre !== undefined ? r.sugarPre : (r.sugarType === '식전' ? r.sugar : 0);
+          return sum + parseFloat(val);
+        }, 0) / sugarRecords.length);
+        avgSugarEl.innerText = `${avgSugar} mg/dL`;
+        if (avgSugar >= 126) {
+          sugarStatusEl.innerHTML = `<span class="text-rose-400 font-bold">당뇨 주의</span>`;
+        } else if (avgSugar < 70) {
+          sugarStatusEl.innerHTML = `<span class="text-purple-400 font-bold">저혈당 주의</span>`;
+        } else if (avgSugar <= 99) {
+          sugarStatusEl.innerHTML = `<span class="text-emerald-400 font-bold">정상 (100미만)</span>`;
+        } else {
+          sugarStatusEl.innerHTML = `<span class="text-amber-400 font-bold">전단계 주의</span>`;
+        }
+      } else {
+        avgSugarEl.innerText = '--';
+        sugarStatusEl.innerText = '기록 없음';
+      }
+
+      // 3. 최근 체중 및 변화
+      const weightRecords = recentRecords.filter(r => r.weight !== null && r.weight !== undefined && r.weight !== '');
+      if (weightRecords.length > 0) {
+        const latestWeight = parseFloat(weightRecords[0].weight);
+        recentWeightEl.innerText = `${latestWeight.toFixed(1)} kg`;
+
+        if (weightRecords.length >= 2) {
+          const oldestWeight = parseFloat(weightRecords[weightRecords.length - 1].weight);
+          const diff = Math.round((latestWeight - oldestWeight) * 10) / 10;
+          const sign = diff > 0 ? '+' : '';
+          const colorCls = diff > 0 ? 'text-amber-400' : (diff < 0 ? 'text-sky-400' : 'text-slate-300');
+          weightDiffEl.innerHTML = `<span class="${colorCls} font-bold">30일간 ${sign}${diff}kg</span>`;
+        } else {
+          weightDiffEl.innerText = '비교기록 1건';
+        }
+      } else {
+        const allWeightRecords = records.filter(r => r.weight !== null && r.weight !== undefined && r.weight !== '');
+        if (allWeightRecords.length > 0) {
+          recentWeightEl.innerText = `${parseFloat(allWeightRecords[0].weight).toFixed(1)} kg`;
+          weightDiffEl.innerText = '30일전 기록없음';
+        } else {
+          recentWeightEl.innerText = '-- kg';
+          weightDiffEl.innerText = '기록 없음';
+        }
+      }
+    }
+
     function renderCharts() {
+      renderSummaryStats();
       renderSugarChart();
       renderBpChart();
       renderWeightChart();
@@ -1958,6 +2177,7 @@
           localStorage.setItem('health_records', JSON.stringify(records));
           alert(`성공적으로 ${records.length}건의 기록이 복원되었습니다.`);
           renderHistory();
+          renderSummaryStats();
           return true;
         } else {
           alert('올바른 백업 데이터 형식이 아닙니다.');
@@ -1976,9 +2196,126 @@
         localStorage.removeItem('health_records');
         resetFormToDefault();
         renderHistory();
+        renderSummaryStats();
         alert('초기화되었습니다.');
       }
     });
+
+    // 체중 입력 카드 - 이전 체중 불러오기 버튼
+    const btnLoadRecentWeight = document.getElementById('btn-load-recent-weight');
+    if (btnLoadRecentWeight) {
+      btnLoadRecentWeight.addEventListener('click', () => {
+        const found = records.find(r => r.weight !== null && r.weight !== undefined && r.weight !== '');
+        if (found) {
+          document.getElementById('weight').value = found.weight;
+          updateRealtimeBmi();
+        } else {
+          alert('이전에 기록된 체중 데이터가 없습니다.');
+        }
+      });
+    }
+
+    // 진료용 CSV 데이터 생성 및 다운로드/공유
+    function generateCsvContent() {
+      const headers = [
+        '날짜',
+        '시간',
+        '시간대',
+        '수축기혈압(mmHg)',
+        '이완기혈압(mmHg)',
+        '맥박(bpm)',
+        '식전혈당(mg/dL)',
+        '식후2시간혈당(mg/dL)',
+        '체중(kg)',
+        'BMI',
+        '메모'
+      ];
+
+      // 과거 -> 최신순 정렬 (의사 진료/경과 관찰용)
+      const sorted = [...records].sort((a, b) => {
+        const timeA = `${a.date} ${a.time || '00:00'}`;
+        const timeB = `${b.date} ${b.time || '00:00'}`;
+        return timeA.localeCompare(timeB);
+      });
+
+      const escapeField = (val) => {
+        if (val === null || val === undefined) return '""';
+        return `"${String(val).replace(/"/g, '""')}"`;
+      };
+
+      const rows = sorted.map(r => {
+        const preVal = r.sugarPre !== undefined ? r.sugarPre : (r.sugarType === '식전' ? r.sugar : '');
+        const postVal = r.sugarPost !== undefined ? r.sugarPost : (r.sugarType === '식후 2시간' ? r.sugar : '');
+        const bmiVal = (r.weight && userHeight) ? calculateBmi(r.weight, userHeight).bmi : (r.bmi || '');
+
+        return [
+          escapeField(r.date || ''),
+          escapeField(r.time || ''),
+          escapeField(r.timing || ''),
+          escapeField(r.bpSys ?? ''),
+          escapeField(r.bpDia ?? ''),
+          escapeField(r.pulse ?? ''),
+          escapeField(preVal ?? ''),
+          escapeField(postVal ?? ''),
+          escapeField(r.weight ?? ''),
+          escapeField(bmiVal ?? ''),
+          escapeField(r.memo ?? '')
+        ].join(',');
+      });
+
+      return [headers.map(h => `"${h}"`).join(','), ...rows].join('\r\n');
+    }
+
+    function downloadCsvBlob(blob, filename) {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    }
+
+    async function exportCsv(mode) {
+      if (records.length === 0) {
+        alert('저장된 건강 기록이 없습니다.');
+        return;
+      }
+      const csvContent = generateCsvContent();
+      const filename = `건강관리기록_${new Date().toISOString().slice(0, 10)}.csv`;
+      const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
+
+      if (mode === 'share') {
+        const file = new File([blob], filename, { type: 'text/csv;charset=utf-8;' });
+        if (navigator.canShare && navigator.canShare({ files: [file] })) {
+          try {
+            await navigator.share({
+              files: [file],
+              title: '나의 건강 관리 기록',
+              text: '병원 진료 및 열람용 건강 관리 기록 CSV 파일입니다.'
+            });
+            return;
+          } catch (e) {
+            if (e.name !== 'AbortError') {
+              downloadCsvBlob(blob, filename);
+            }
+            return;
+          }
+        }
+      }
+
+      downloadCsvBlob(blob, filename);
+    }
+
+    const btnCsvShare = document.getElementById('btn-export-csv-share');
+    if (btnCsvShare) {
+      btnCsvShare.addEventListener('click', () => exportCsv('share'));
+    }
+    const btnCsvDownload = document.getElementById('btn-export-csv-download');
+    if (btnCsvDownload) {
+      btnCsvDownload.addEventListener('click', () => exportCsv('download'));
+    }
 
     sortRecordsChronologically();
     initHeaderDate();
