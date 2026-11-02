@@ -592,25 +592,25 @@
   </div>
 
   <!-- 그래프 전체화면 확대 모달 (완벽 반응형 가로/세로 2D 스크롤 및 우측 잘림 방지) -->
-  <div id="zoom-modal" class="fixed inset-0 bg-slate-950 z-[100] flex flex-col justify-between p-3 safe-top safe-bottom hidden">
-    <div>
-      <div class="flex items-center justify-between pb-2 border-b border-slate-800 gap-2">
-        <div class="flex items-center gap-2 shrink-0">
-          <span class="w-2.5 h-2.5 rounded-full bg-blue-500"></span>
-          <h3 id="zoom-modal-title" class="text-sm font-bold text-white tracking-tight">확대 그래프</h3>
+  <div id="zoom-modal" class="fixed inset-0 bg-slate-950 z-[100] flex flex-col justify-between p-3 safe-top safe-bottom overflow-x-hidden hidden">
+    <div class="w-full">
+      <div class="flex items-center justify-between pb-2 border-b border-slate-800 gap-1.5 w-full">
+        <div class="flex items-center gap-1.5 min-w-0 flex-1 mr-1">
+          <span class="w-2.5 h-2.5 rounded-full bg-blue-500 shrink-0"></span>
+          <h3 id="zoom-modal-title" class="text-xs sm:text-sm font-bold text-white tracking-tight truncate">확대 그래프</h3>
         </div>
         <div class="flex items-center gap-1.5 shrink-0">
-          <!-- 세로 높이 전환 토글 버튼 (화면 맞춤 vs 세로 확대) -->
-          <div class="inline-flex p-0.5 bg-slate-900 border border-slate-800 rounded-lg text-xs font-semibold">
-            <button type="button" id="btn-zoom-fit" onclick="setZoomHeightMode('fit')" class="px-2 py-1 rounded-md transition-all text-xs text-slate-400 hover:text-slate-200">
-              화면 맞춤
+          <!-- 세로 높이 전환 토글 버튼 (맞춤 vs 확대) -->
+          <div class="inline-flex p-0.5 bg-slate-900 border border-slate-800 rounded-lg font-semibold shrink-0">
+            <button type="button" id="btn-zoom-fit" onclick="setZoomHeightMode('fit')" class="px-2 py-1 rounded-md transition-all text-[11px] text-slate-400 hover:text-slate-200 whitespace-nowrap">
+              맞춤
             </button>
-            <button type="button" id="btn-zoom-tall" onclick="setZoomHeightMode('tall')" class="px-2 py-1 rounded-md transition-all text-xs bg-blue-600 text-white font-bold shadow-sm">
-              세로 확대 ↕
+            <button type="button" id="btn-zoom-tall" onclick="setZoomHeightMode('tall')" class="px-2 py-1 rounded-md transition-all text-[11px] bg-blue-600 text-white font-bold shadow-sm whitespace-nowrap">
+              확대 ↕
             </button>
           </div>
-          <button type="button" onclick="closeZoomChart()" class="w-8 h-8 rounded-full bg-slate-800 text-slate-300 hover:text-white flex items-center justify-center active:scale-95 transition-all shrink-0">
-            <i class="fa-solid fa-xmark text-base"></i>
+          <button type="button" onclick="closeZoomChart()" class="w-8 h-8 rounded-full bg-slate-800 text-slate-300 hover:text-white flex items-center justify-center active:scale-95 transition-all shrink-0" title="닫기">
+            <i class="fa-solid fa-xmark text-sm"></i>
           </button>
         </div>
       </div>
@@ -1720,9 +1720,9 @@
       const switchBox = document.getElementById('zoom-switch-container');
       
       const titles = {
-        'sugar': '혈당 변화 추이 전체화면 확대',
-        'bp': '혈압 추이 전체화면 확대',
-        'weight': '체중 및 BMI 지수 전체화면 확대'
+        'sugar': '혈당 추이 확대',
+        'bp': '혈압 추이 확대',
+        'weight': '체중·BMI 확대'
       };
       titleEl.innerText = titles[type];
 
@@ -1783,8 +1783,8 @@
       const isFit = mode === 'fit';
 
       if (fitBtn && tallBtn) {
-        fitBtn.className = `px-2 py-1 rounded-md transition-all text-xs ${isFit ? 'bg-blue-600 text-white font-bold shadow-sm' : 'text-slate-400 hover:text-slate-200'}`;
-        tallBtn.className = `px-2 py-1 rounded-md transition-all text-xs ${!isFit ? 'bg-blue-600 text-white font-bold shadow-sm' : 'text-slate-400 hover:text-slate-200'}`;
+        fitBtn.className = `px-2 py-1 rounded-md transition-all text-[11px] whitespace-nowrap ${isFit ? 'bg-blue-600 text-white font-bold shadow-sm' : 'text-slate-400 hover:text-slate-200'}`;
+        tallBtn.className = `px-2 py-1 rounded-md transition-all text-[11px] whitespace-nowrap ${!isFit ? 'bg-blue-600 text-white font-bold shadow-sm' : 'text-slate-400 hover:text-slate-200'}`;
       }
 
       const zoomBox = document.getElementById('zoom-chart-box');
